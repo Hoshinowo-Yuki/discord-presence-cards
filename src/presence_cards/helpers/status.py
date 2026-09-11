@@ -37,18 +37,18 @@ def buildStatusIndicator(
 
     # Background circle creates the gap between the avatar edge and the dot,
     # exactly like Discord separating the indicator from the avatar ring.
-    gap = 4
+    gap = max(2, int(radius * 0.28))
     backdrop = f'<circle cx="{cx}" cy="{cy}" r="{radius + gap}" fill="{ringColor}" />'
 
     if status == "online":
         shape = f'<circle cx="{cx}" cy="{cy}" r="{radius}" fill="{color}" />'
 
     elif status == "idle":
-        cutCx = cx - int(radius * 0.45)
-        cutCy = cy - int(radius * 0.45)
+        cutCx = cx - radius * 0.375
+        cutCy = cy - radius * 0.3125
         shape = (
             f'<circle cx="{cx}" cy="{cy}" r="{radius}" fill="{color}" />'
-            f'<circle cx="{cutCx}" cy="{cutCy}" r="{int(radius * 0.85)}" fill="{ringColor}" />'
+            f'<circle cx="{cutCx}" cy="{cutCy}" r="{radius * 0.75}" fill="{ringColor}" />'
         )
 
     elif status == "dnd":
