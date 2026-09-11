@@ -2,12 +2,14 @@
 
 import httpx
 
-from presence_cards.store import Presence
-from presence_cards.themes import Theme
+from ..store import Presence
+from ..themes import Theme
 
 from ..helpers.avatar import buildAvatarCircle
 from ..helpers.pill import buildServerTagPill
-from ..helpers.primitives import buildText, estimateTextWidth, fetchDataUri
+from ..helpers.primitives import (
+    buildText, estimateTextWidth, fetchDataUri, buildCardBackground,
+)
 
 CONTENT_LEFT = 120   # x where text/pill start, just right of the avatar
 CARD_MIN_WIDTH = 340
@@ -23,6 +25,8 @@ async def renderDefault(
 ) -> str:
     """Render the default presence card as an SVG string. Width grows to fit."""
     avatarUri = await fetchDataUri(presence.avatarUrl, httpClient)
+
+    cardDefs, cardFill = buildCardBackground(theme)
 
     avatarMarkup = buildAvatarCircle(
         avatarUri=avatarUri,
@@ -64,12 +68,16 @@ async def renderDefault(
             x=CONTENT_LEFT, y=78, content=presence.activityName,
             fill=theme["subtext"], size=actSize,
         )
-        rightEdge = max(rightEdge, CONTENT_LEFT + estimateTextWidth(presence.activityName, actSize))
+        rightEdge = max(
+            rightEdge,
+            CONTENT_LEFT + estimateTextWidth(presence.activityName, actSize),
+        )
 
     cardWidth = max(CARD_MIN_WIDTH, int(rightEdge) + RIGHT_PAD)
 
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{cardWidth}" height="{CARD_HEIGHT}" viewBox="0 0 {cardWidth} {CARD_HEIGHT}">
-  <rect width="{cardWidth}" height="{CARD_HEIGHT}" rx="12" fill="{theme["background"]}" />
+  {cardDefs}
+  <rect width="{cardWidth}" height="{CARD_HEIGHT}" rx="12" fill="{cardFill}" />
   {avatarMarkup}
   {nameMarkup}
   {tagMarkup}

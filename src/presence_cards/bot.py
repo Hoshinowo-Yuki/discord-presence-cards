@@ -24,6 +24,37 @@ def extractServerTag(member: discord.Member) -> tuple[Optional[str], Optional[st
     badgeUrl = pg.badge.url if pg.badge else None
     return pg.tag, badgeUrl
 
+def extractActivity(member: discord.Member):
+    """Pick the primary activity and read dpy's RESOLVED fields off it.
+
+    Returns a dict of the flattened values (all Optional). Uses
+    .large_image_url / .start etc. — never raw CDN endpoints or ms epochs.
+    """
+    empty = {
+        "name": None, "details": None, "state": None,
+        "largeImageUrl": None, "smallImageUrl": None, "start": None,
+    }
+    if not member.activities:
+        return empty
+
+    # Prefer a rich Activity (has details/assets) over a bare Game/Custom.
+    def rank(a) -> int:
+        n = type(a).__name__
+        return {"Activity": 0, "Streaming": 1, "Spotify": 2, "Game": 3}.get(n, 4)
+
+    act = sorted(member.activities, key=rank)[0]
+    if getattr(act, "name", None) is None:
+        return empty
+
+    # getattr defaults: Game/CustomActivity lack these props entirely.
+    return {
+        "name": act.name,
+        "details": getattr(act, "details", None),
+        "state": getattr(act, "state", None),
+        "largeImageUrl": getattr(act, "large_image_url", None),  # dpy resolves it
+        "smallImageUrl": getattr(act, "small_image_url", None),  # dpy resolves it
+        "start": getattr(act, "start", None),                    # tz-aware datetime
+    }
 
 class PresenceBot(discord.Client):
     async def on_ready(self):
@@ -37,19 +68,12 @@ class PresenceBot(discord.Client):
         self.capturePresence(after)
 
     def capturePresence(self, member: discord.Member) -> None:
-        activityName = None
-        if member.activities:
-            for activity in member.activities:
-                name = getattr(activity, "name", None)
-                if name:
-                    activityName = name
-                    break
+        act = extractActivity(member)
 
         tagText, badgeUrl = extractServerTag(member)
 
-        # avatar decoration IS available from gateway user object
         decoUrl = None
-        deco = getattr(member, "avatar_decoration", None)  # Asset or None
+        deco = getattr(member, "avatar_decoration", None)
         if deco is not None:
             decoUrl = str(deco.url)
 
@@ -57,14 +81,18 @@ class PresenceBot(discord.Client):
             Presence(
                 userId=member.id,
                 displayName=member.display_name,
-                username=member.name,   # the @handle
+                username=member.name,
                 avatarUrl=str(member.display_avatar.replace(format="png", size=128).url),
                 status=str(member.status),
-                activityName=activityName,
+                activityName=act["name"],
                 serverTagText=tagText,
                 serverTagBadgeUrl=badgeUrl,
                 avatarDecorationUrl=decoUrl,
-                # bannerUrl intentionally NOT set here — needs REST fetch
+                activityDetails=act["details"],
+                activityState=act["state"],
+                activityLargeImageUrl=act["largeImageUrl"],
+                activitySmallImageUrl=act["smallImageUrl"],
+                activityStart=act["start"],
             )
         )
 

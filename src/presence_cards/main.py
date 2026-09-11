@@ -3,14 +3,18 @@
 import asyncio
 import os
 from contextlib import asynccontextmanager
-import discord
 import httpx
 from fastapi import FastAPI, Query, Response
 
 from .bot import bot
 from .render import renderDefault, renderProfile
 from .store import store
+
+from .helpers.enrich import enrichPresence
+from .helpers.responses import notFoundCard, svgResponse
+from .helpers.theme_resolver import resolveThemeParam
 from .themes import resolveTheme
+from typing import Optional
 
 TOKEN = os.environ["DISCORD_TOKEN"]
 
@@ -29,60 +33,47 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-
 @app.get("/profile/{userId}")
-async def profileCard(userId: int, theme: str = Query("dark"), width: int = Query(500)):
+async def profileCard(userId: int, theme: str = Query("dark"),
+                      color: Optional[str] = Query(None), width: int = Query(500)):
     presence = store.getPresence(userId)
     if presence is None:
-        return Response(
-            content="<svg xmlns='http://www.w3.org/2000/svg' width='340' height='120'>"
-            "<rect width='340' height='120' rx='12' fill='#2f3136'/>"
-            "<text x='24' y='64' fill='#b9bbbe' font-family='sans-serif' font-size='16'>"
-            "Presence not found</text></svg>",
-            media_type="image/svg+xml",
-            status_code=404,
-        )
+        return notFoundCard()
 
-    # banner is NOT on the gateway — fetch via REST (consider caching this!)
+    await enrichPresence(presence, userId)
+
     try:
-        user = await bot.fetch_user(userId)
-        if user.banner:
-            presence.bannerUrl = str(user.banner.replace(format="gif", size=1024).url)
-    except discord.HTTPError:
-        pass  # renderProfile falls back to flat banner strip
+        resolved = resolveThemeParam(theme=theme, color=color,
+                                     accentColor=presence.accentColor)
+    except ValueError:
+        return Response("bad color param", status_code=400)
 
-    svg = await renderProfile(presence, resolveTheme(theme),
-                              app.state.httpClient, width=width)
-    return Response(content=svg, media_type="image/svg+xml",
-                    headers={"Cache-Control": "no-cache"})
+    svg = await renderProfile(presence, resolved, app.state.httpClient, width=width)
+    return svgResponse(svg)
 
 
 @app.get("/presence/{userId}")
 async def presenceCard(
     userId: int,
     theme: str = Query("dark"),
+    color: Optional[str] = Query(None),
     hideSpotify: bool = Query(False),
 ):
     presence = store.getPresence(userId)
     if presence is None:
-        return Response(
-            content="<svg xmlns='http://www.w3.org/2000/svg' width='340' height='120'>"
-            "<rect width='340' height='120' rx='12' fill='#2f3136'/>"
-            "<text x='24' y='64' fill='#b9bbbe' font-family='sans-serif' font-size='16'>"
-            "Presence not found</text></svg>",
-            media_type="image/svg+xml",
-            status_code=404,
-        )
+        return notFoundCard()
 
-    resolvedTheme = resolveTheme(theme)
+    try:
+        resolvedTheme = resolveThemeParam(
+            theme=theme,
+            color=color,
+            accentColor=None,      # ← see note
+        )
+    except ValueError:
+        return Response("bad color param", status_code=400)
+
     svg = await renderDefault(
-        presence,
-        resolvedTheme,
-        app.state.httpClient,
+        presence, resolvedTheme, app.state.httpClient,
         hideSpotify=hideSpotify,
     )
-    return Response(
-        content=svg,
-        media_type="image/svg+xml",
-        headers={"Cache-Control": "no-cache"},
-    )
+    return svgResponse(svg)

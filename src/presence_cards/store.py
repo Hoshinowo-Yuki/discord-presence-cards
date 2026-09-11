@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Optional
 
 
@@ -19,6 +20,15 @@ class Presence:
     username: Optional[str] = None            # @handle under the display name
     bannerUrl: Optional[str] = None           # animated .gif ok → base64'd
     avatarDecorationUrl: Optional[str] = None # APNG preset → base64'd
+
+    # --- activity row (also populate in bot.py, from the dpy Activity) ---
+    activityDetails: Optional[str] = None       # first text line under name
+    activityState: Optional[str] = None         # second text line
+    activityLargeImageUrl: Optional[str] = None # from Activity.large_image_url
+    activitySmallImageUrl: Optional[str] = None # from Activity.small_image_url
+    activityStart: Optional[datetime] = None    # from Activity.start (tz-aware)
+
+    accentColor: Optional[int] = None    # user.accent_color.value or None
 
 class PresenceStore:
     """In-memory presence store, keyed by Discord user id."""

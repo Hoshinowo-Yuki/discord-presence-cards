@@ -61,3 +61,18 @@ def buildText(
         f'font-family="{FONT_STACK}" font-size="{size}" '
         f'font-weight="{weight}">{escapeXml(content)}</text>'
     )
+
+def buildCardBackground(theme, defsId: str = "cardBg") -> tuple[str, str]:
+    """Return (defsMarkup, fill) for a card background.
+    Flat theme → ("", "#hex"). Gradient theme → (<defs>…</defs>, "url(#id)")."""
+    gradient = theme.get("bgGradient")
+    if not gradient:
+        return "", theme["background"]
+    top, bottom = gradient
+    defs = (
+        f'<defs><linearGradient id="{defsId}" x1="0" y1="0" x2="1" y2="1">'
+        f'<stop offset="0%" stop-color="{top}"/>'
+        f'<stop offset="100%" stop-color="{bottom}"/>'
+        f'</linearGradient></defs>'
+    )
+    return defs, f"url(#{defsId})"
