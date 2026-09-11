@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: MIT
 
+import discord
 from typing import Optional
 
-import discord
-
+from .helpers.badges import resolveBadges
 from .store import Presence, store
 
 
@@ -88,6 +88,7 @@ class PresenceBot(discord.Client):
                 serverTagText=tagText,
                 serverTagBadgeUrl=badgeUrl,
                 avatarDecorationUrl=decoUrl,
+                badgeUris=resolveBadges(member.public_flags),
                 activityDetails=act["details"],
                 activityState=act["state"],
                 activityLargeImageUrl=act["largeImageUrl"],

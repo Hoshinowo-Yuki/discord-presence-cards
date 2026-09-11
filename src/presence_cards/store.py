@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 
@@ -20,6 +20,7 @@ class Presence:
     username: Optional[str] = None            # @handle under the display name
     bannerUrl: Optional[str] = None           # animated .gif ok → base64'd
     avatarDecorationUrl: Optional[str] = None # APNG preset → base64'd
+    badgeUris: list[str] = field(default_factory=list)  # from resolveBadges(user.public_flags)
 
     # --- activity row (also populate in bot.py, from the dpy Activity) ---
     activityDetails: Optional[str] = None       # first text line under name

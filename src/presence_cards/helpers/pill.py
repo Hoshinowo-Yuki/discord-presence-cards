@@ -8,6 +8,19 @@ from presence_cards.store import Presence
 
 from .primitives import FONT_STACK, buildText, escapeXml, estimateTextWidth
 
+def _buildFlagBadges(badgeUris: list[str], size: int = 28, gap: int = 4) -> str:
+    """Inline-flex group of flag badges (data-URI SVGs) for the foreignObject row.
+    Grouped so their internal gap is tight, independent of the row's 8px gap."""
+    if not badgeUris:
+        return ""
+    imgs = "".join(
+        f'<img src="{uri}" width="{size}" height="{size}" style="display:block" />'
+        for uri in badgeUris
+    )
+    return (
+        f'<div style="display:inline-flex;align-items:center;gap:{gap}px">'
+        f'{imgs}</div>'
+    )
 
 def buildServerTagPill(
     x: int,
@@ -85,6 +98,15 @@ def buildHandlePillRow(
         f'style="display:flex;align-items:center;gap:8px;font-family:{FONT_STACK}">'
         f'<div style="font:400 20px {FONT_STACK};color:{theme["subtext"]}">{handle}</div>'
         f'{pill}</div>'
+    )
+
+    badges = _buildFlagBadges(presence.badgeUris)
+
+    body = (
+        f'<div xmlns="http://www.w3.org/1999/xhtml" '
+        f'style="display:flex;align-items:center;gap:8px;font-family:{FONT_STACK}">'
+        f'<div style="font:400 20px {FONT_STACK};color:{theme["subtext"]}">{handle}</div>'
+        f'{pill}{badges}</div>'
     )
 
     return (
