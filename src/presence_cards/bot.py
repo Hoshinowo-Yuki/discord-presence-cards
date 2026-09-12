@@ -3,6 +3,8 @@
 import discord
 from typing import Optional
 
+from discord import member
+
 from .helpers.badges import resolveBadges
 from .store import Presence, store
 
@@ -13,6 +15,21 @@ def buildIntents() -> discord.Intents:
     intents.members = True
     return intents
 
+def extractCustomStatus(
+    member: discord.Member,
+) -> tuple[Optional[str], Optional[str], Optional[str]]:
+    """(text, emojiUnicode, emojiUrl). CustomActivity is orthogonal to rich
+    activities — a user can have a game AND a custom status simultaneously,
+    so we scan activities directly rather than reusing the ranked pick."""
+    for act in member.activities:
+        if type(act).__name__ == "CustomActivity":
+            emoji = act.emoji
+            if emoji is None:
+                return act.name, None, None
+            if emoji.is_custom_emoji():
+                return act.name, None, str(emoji.url)
+            return act.name, emoji.name, None
+    return None, None, None
 
 def extractServerTag(member: discord.Member) -> tuple[Optional[str], Optional[str]]:
     """Pull (tagText, badgeUrl) off a member's primary guild identity."""
@@ -71,6 +88,7 @@ class PresenceBot(discord.Client):
         act = extractActivity(member)
 
         tagText, badgeUrl = extractServerTag(member)
+        statusText, statusEmojiUni, statusEmojiUrl = extractCustomStatus(member)
 
         decoUrl = None
         deco = getattr(member, "avatar_decoration", None)
@@ -91,6 +109,9 @@ class PresenceBot(discord.Client):
                 badgeUris=resolveBadges(member.public_flags),
                 activityDetails=act["details"],
                 activityState=act["state"],
+                customStatusText=statusText,
+                customStatusEmojiUnicode=statusEmojiUni,
+                customStatusEmojiUrl=statusEmojiUrl,
                 activityLargeImageUrl=act["largeImageUrl"],
                 activitySmallImageUrl=act["smallImageUrl"],
                 activityStart=act["start"],

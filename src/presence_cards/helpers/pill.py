@@ -22,6 +22,46 @@ def _buildFlagBadges(badgeUris: list[str], size: int = 28, gap: int = 4) -> str:
         f'{imgs}</div>'
     )
 
+def buildStatusPill(
+    text: Optional[str],
+    emojiUnicode: Optional[str],
+    emojiUrl: Optional[str],
+    theme: dict,
+    emojiSize: int = 26,
+) -> str:
+    """Custom-status bubble: [emoji] italic text. Emoji is either a custom
+    CDN asset (<img>) or a unicode codepoint (<span>, font-rendered)."""
+    if not (text or emojiUnicode or emojiUrl):
+        return ""
+
+    if emojiUrl:
+        emojiEl = (
+            f'<img src="{emojiUrl}" width="{emojiSize}" height="{emojiSize}" '
+            f'style="display:block" />'
+        )
+    elif emojiUnicode:
+        emojiEl = (
+            f'<span style="font-family:{FONT_STACK};'
+            f'font-size:{emojiSize}px">{escapeXml(emojiUnicode)}</span>'
+        )
+    else:
+        emojiEl = ""
+
+    textEl = (
+        f'<span style="font:italic 400 20px {FONT_STACK};'
+        f'color:{theme["subtext"]};overflow:hidden;text-overflow:ellipsis;'
+        f'white-space:nowrap">{escapeXml(text)}</span>'
+        if text else ""
+    )
+
+    return (
+        f'<div xmlns="http://www.w3.org/1999/xhtml" '   # ← this was missing
+        f'style="display:inline-flex;align-items:center;gap:9px;'
+        f'padding:12px 24px;border-radius:14px;background:{theme["tagPill"]};'
+        f'max-width:100%;overflow:hidden">'
+        f'{emojiEl}{textEl}</div>'
+    )
+
 def buildServerTagPill(
     x: int,
     cy: int,
@@ -88,7 +128,7 @@ def buildHandlePillRow(
         )
         pill = (
             f'<div style="display:inline-flex;align-items:center;gap:5px;'
-            f'padding:4px 11px;border-radius:13px;background:{theme["tagPill"]};'
+            f'padding:4px 14px 4px 11px;border-radius:13px;background:{theme["tagPill"]};'
             f'font:600 16px {FONT_STACK};color:{theme["text"]}">'
             f'{badgeImg}<span>{escapeXml(presence.serverTagText)}</span></div>'
         )

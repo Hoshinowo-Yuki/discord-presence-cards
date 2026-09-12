@@ -29,6 +29,11 @@ class Presence:
     activitySmallImageUrl: Optional[str] = None # from Activity.small_image_url
     activityStart: Optional[datetime] = None    # from Activity.start (tz-aware)
 
+    # --- custom status (also populate in bot.py, from the dpy CustomActivity) ---
+    customStatusText: Optional[str] = None
+    customStatusEmojiUnicode: Optional[str] = None
+    customStatusEmojiUrl: Optional[str] = None
+
     accentColor: Optional[int] = None    # user.accent_color.value or None
 
 class PresenceStore:

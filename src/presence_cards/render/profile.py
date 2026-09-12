@@ -7,7 +7,7 @@ from ..themes import Theme
 
 from ..helpers.activity import buildActivityRow, buildActivityCard
 from ..helpers.avatar import buildAvatarCircle
-from ..helpers.pill import buildHandlePillRow
+from ..helpers.pill import buildHandlePillRow, buildStatusPill
 from ..helpers.primitives import buildText, fetchDataUri, buildCardBackground
 from ..helpers.color import derivePanel
 
@@ -36,6 +36,12 @@ LAYOUT = {
 
     "activityArt": 72,    # SINGLE source of truth — matches buildActivityRow default
     "activityPad": 14,
+
+# ── custom status pill (floats beside avatar, independent of derive chain) ──
+    "statusX":     200,   # ≈ avatar right edge, slight overlap like the screenshot
+    "statusY":     190,   # ≈ avatarCy - pill/2, sits at avatar's upper-middle
+    "statusW":     260,   # hard truncation boundary for long statuses
+    "statusH":     52,    # box ≥ pill height (~34) so nothing clips
 }
 
 
@@ -116,6 +122,24 @@ async def renderProfile(
         presence=presence, theme=theme, badgeUri=badgeUri,
     )
 
+    statusPill = buildStatusPill(
+            presence.customStatusText,
+            presence.customStatusEmojiUnicode,
+            presence.customStatusEmojiUrl,
+            theme,
+        )
+    statusFo = (
+        f'<foreignObject x="{L["statusX"]}" y="{L["statusY"]}" '
+        f'width="{L["statusW"]}" height="{L["statusH"]}">{statusPill}</foreignObject>'
+        if statusPill else ""
+    )
+
+    statusTail = ""
+    if statusPill:
+        bx, by = L["statusX"] - 2, L["statusY"] - 6
+        dot = lambda cx, cy, r: f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{theme["tagPill"]}" />'
+        statusTail = dot(bx, by, 4) + dot(bx + 8, by + 8, 7)
+
     activityBlock = ""
     vbH = VB_H_BASE
     if presence.activityName:
@@ -157,6 +181,6 @@ async def renderProfile(
         f'{cardDefs}'
         f'<rect width="{VB_W}" height="{vbH}" rx="{L["corner"]}" '
         f'fill="{cardFill}" />'
-        f'{banner}{avatar}{name}{handleAndPill}{activityBlock}'
+        f'{banner}{avatar}{name}{handleAndPill}{activityBlock}{statusTail}{statusFo}'
         f'</svg>'
     )
