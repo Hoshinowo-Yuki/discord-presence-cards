@@ -87,6 +87,7 @@ class PresenceBot(discord.Client):
     def capturePresence(self, member: Member) -> None:
         act = extractActivity(member)
 
+        avatar = member.display_avatar
         tagText, badgeUrl = extractServerTag(member)
         statusText, statusEmojiUni, statusEmojiUrl = extractCustomStatus(member)
 
@@ -100,7 +101,13 @@ class PresenceBot(discord.Client):
                 userId=member.id,
                 displayName=member.display_name,
                 username=member.name,
-                avatarUrl=str(member.display_avatar.replace(format="png", size=128).url),
+                avatarUrl = str(
+                    avatar.replace(
+                        format="gif" if avatar.is_animated() else "png",
+                        size=128
+                        )
+                    .url
+                ),
                 status=str(member.status),
                 activityName=act["name"],
                 serverTagText=tagText,

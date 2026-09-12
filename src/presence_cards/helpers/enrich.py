@@ -17,6 +17,13 @@ async def enrichPresence(presence: Presence, userId: int) -> None:
     user = await cachedFetchUser(userId)
     if user is None:
         return
-    if user.banner:
-        presence.bannerUrl = str(user.banner.replace(format="png", size=1024).url)
+
+    banner = user.banner
+    if banner:
+        presence.bannerUrl = str(
+            banner.replace(
+                format="gif" if banner.is_animated() else "png",
+                size=1024,
+            ).url
+        )
     presence.accentColor = user.accent_color.value if user.accent_color else None
