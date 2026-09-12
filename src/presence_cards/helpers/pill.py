@@ -28,6 +28,7 @@ def buildStatusPill(
     emojiUrl: Optional[str],
     theme: dict,
     emojiSize: int = 28,
+    maxHeight: int = 85,
 ) -> str:
     """Custom-status bubble matching Discord: rounded rect, emoji left
     (top-aligned to line 1), italic text wrapping to 2 lines. No tail."""
@@ -59,7 +60,8 @@ def buildStatusPill(
         f'<div xmlns="http://www.w3.org/1999/xhtml" '
         f'style="display:inline-flex;align-items:flex-start;gap:12px;'
         f'padding:16px 22px;border-radius:20px;background:{theme["tagPill"]};'
-        f'width:max-content;max-width:100%;box-sizing:border-box;overflow:hidden">'
+        f'width:max-content;max-width:100%;max-height:{maxHeight}px;'
+        f'box-sizing:border-box;overflow:hidden">'
         f'{emojiEl}{textEl}</div>'
     )
 

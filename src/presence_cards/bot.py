@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MIT
 
+import json
 import discord
 from typing import Optional
 
@@ -17,6 +18,8 @@ def buildIntents() -> discord.Intents:
 
 def extractCustomStatus(
     member: Member,
+    rawText: Optional[str] = None,
+    hasRawPayload: bool = False,
 ) -> tuple[Optional[str], Optional[str], Optional[str]]:
     """(text, emojiUnicode, emojiUrl). CustomActivity is orthogonal to rich
     activities — a user can have a game AND a custom status simultaneously,
@@ -24,11 +27,12 @@ def extractCustomStatus(
     for act in member.activities:
         if isinstance(act, CustomActivity):
             emoji = act.emoji
+            text = rawText if hasRawPayload else (act.state or "")
             if emoji is None:
-                return act.name, None, None
+                return text, None, None
             if emoji.is_custom_emoji():
-                return act.name, None, str(emoji.url)
-            return act.name, emoji.name, None
+                return text, None, str(emoji.url)
+            return text, emoji.name, None
     return None, None, None
 
 def extractServerTag(member: Member) -> tuple[Optional[str], Optional[str]]:
@@ -74,6 +78,33 @@ def extractActivity(member: Member):
     }
 
 class PresenceBot(discord.Client):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.rawCustomStatusText: dict[int, Optional[str]] = {}
+
+    async def on_socket_raw_receive(self, msg: str) -> None:
+        # discord.py normalizes an emoji-only status with name="Custom Status"
+        # into both activity.name and activity.state, losing that state was
+        # absent in Discord's original payload. Read the raw state so a user
+        # who actually typed "Custom Status" can still be distinguished.
+        if '"PRESENCE_UPDATE"' not in msg:
+            return
+
+        payload = json.loads(msg)
+        if payload.get("t") != "PRESENCE_UPDATE":
+            return
+
+        customActivities = [
+            activity
+            for activity in payload.get("d", {}).get("activities", [])
+            if activity.get("type") == 4
+        ]
+        userId = int(payload.get("d", {}).get("user", {}).get("id", 0))
+        if customActivities:
+            self.rawCustomStatusText[userId] = customActivities[0].get("state")
+        elif userId:
+            self.rawCustomStatusText[userId] = None
+
     async def on_ready(self):
         # Prime the store with whatever presences we can already see.
         for guild in self.guilds:
@@ -89,7 +120,12 @@ class PresenceBot(discord.Client):
 
         avatar = member.display_avatar
         tagText, badgeUrl = extractServerTag(member)
-        statusText, statusEmojiUni, statusEmojiUrl = extractCustomStatus(member)
+        hasRawStatus = member.id in self.rawCustomStatusText
+        statusText, statusEmojiUni, statusEmojiUrl = extractCustomStatus(
+            member,
+            rawText=self.rawCustomStatusText.get(member.id),
+            hasRawPayload=hasRawStatus,
+        )
 
         decoUrl = None
         deco = getattr(member, "avatar_decoration", None)
@@ -126,4 +162,4 @@ class PresenceBot(discord.Client):
         )
 
 
-bot = PresenceBot(intents=buildIntents())
+bot = PresenceBot(intents=buildIntents(), enable_debug_events=True)

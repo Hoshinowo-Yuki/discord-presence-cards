@@ -41,7 +41,7 @@ LAYOUT = {
     "statusX":     225,   # ≈ avatar right edge, slight overlap like the screenshot
     "statusY":     190,   # ≈ avatarCy - pill/2, sits at avatar's upper-middle
     "statusW":     450,   # hard truncation boundary for long statuses
-    "statusH":     85,    # fits 2 wrapped lines: 2×~26 line-height + 2×14 pad ≈ 80
+    "statusH":     85,    # fits 2 wrapped lines: 2×~26 line-height + 2×14 pad ≈ 80, CJK + 5 = 85
 }
 
 
@@ -127,6 +127,7 @@ async def renderProfile(
             presence.customStatusEmojiUnicode,
             presence.customStatusEmojiUrl,
             theme,
+            maxHeight=L["statusH"],
         )
 
     statusFo = (
