@@ -3,7 +3,7 @@
 import discord
 from typing import Optional
 
-from discord import member
+from discord import Member, CustomActivity
 
 from .helpers.badges import resolveBadges
 from .store import Presence, store
@@ -16,13 +16,13 @@ def buildIntents() -> discord.Intents:
     return intents
 
 def extractCustomStatus(
-    member: discord.Member,
+    member: Member,
 ) -> tuple[Optional[str], Optional[str], Optional[str]]:
     """(text, emojiUnicode, emojiUrl). CustomActivity is orthogonal to rich
     activities — a user can have a game AND a custom status simultaneously,
     so we scan activities directly rather than reusing the ranked pick."""
     for act in member.activities:
-        if type(act).__name__ == "CustomActivity":
+        if isinstance(act, CustomActivity):
             emoji = act.emoji
             if emoji is None:
                 return act.name, None, None
@@ -31,7 +31,7 @@ def extractCustomStatus(
             return act.name, emoji.name, None
     return None, None, None
 
-def extractServerTag(member: discord.Member) -> tuple[Optional[str], Optional[str]]:
+def extractServerTag(member: Member) -> tuple[Optional[str], Optional[str]]:
     """Pull (tagText, badgeUrl) off a member's primary guild identity."""
     pg = getattr(member, "primary_guild", None)
     if pg is None or not pg.tag:
@@ -41,36 +41,36 @@ def extractServerTag(member: discord.Member) -> tuple[Optional[str], Optional[st
     badgeUrl = pg.badge.url if pg.badge else None
     return pg.tag, badgeUrl
 
-def extractActivity(member: discord.Member):
-    """Pick the primary activity and read dpy's RESOLVED fields off it.
-
-    Returns a dict of the flattened values (all Optional). Uses
-    .large_image_url / .start etc. — never raw CDN endpoints or ms epochs.
-    """
+def extractActivity(member: Member):
     empty = {
         "name": None, "details": None, "state": None,
         "largeImageUrl": None, "smallImageUrl": None, "start": None,
     }
-    if not member.activities:
+
+    # CustomActivity is the status bubble, not a real activity for the box.
+    candidates = [
+        a for a in member.activities
+        if not isinstance(a, CustomActivity)
+    ]
+
+    if not candidates:
         return empty
 
-    # Prefer a rich Activity (has details/assets) over a bare Game/Custom.
     def rank(a) -> int:
         n = type(a).__name__
         return {"Activity": 0, "Streaming": 1, "Spotify": 2, "Game": 3}.get(n, 4)
 
-    act = sorted(member.activities, key=rank)[0]
+    act = sorted(candidates, key=rank)[0]
     if getattr(act, "name", None) is None:
         return empty
 
-    # getattr defaults: Game/CustomActivity lack these props entirely.
     return {
         "name": act.name,
         "details": getattr(act, "details", None),
         "state": getattr(act, "state", None),
-        "largeImageUrl": getattr(act, "large_image_url", None),  # dpy resolves it
-        "smallImageUrl": getattr(act, "small_image_url", None),  # dpy resolves it
-        "start": getattr(act, "start", None),                    # tz-aware datetime
+        "largeImageUrl": getattr(act, "large_image_url", None),
+        "smallImageUrl": getattr(act, "small_image_url", None),
+        "start": getattr(act, "start", None),
     }
 
 class PresenceBot(discord.Client):
@@ -81,10 +81,10 @@ class PresenceBot(discord.Client):
                 self.capturePresence(member)
         print(f"Logged in as {self.user} — cached {len(store._presences)} presences.")
 
-    async def on_presence_update(self, before: discord.Member, after: discord.Member):
+    async def on_presence_update(self, before: Member, after: Member):
         self.capturePresence(after)
 
-    def capturePresence(self, member: discord.Member) -> None:
+    def capturePresence(self, member: Member) -> None:
         act = extractActivity(member)
 
         tagText, badgeUrl = extractServerTag(member)
