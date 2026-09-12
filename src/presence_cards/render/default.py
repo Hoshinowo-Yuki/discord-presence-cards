@@ -8,7 +8,7 @@ from ..themes import Theme
 from ..helpers.avatar import buildAvatarCircle
 from ..helpers.pill import buildServerTagPill
 from ..helpers.primitives import (
-    buildText, estimateTextWidth, fetchDataUri, buildCardBackground,
+    buildText, estimateTextWidth, fetchDataUri, buildCardBackground, buildSvgRoot,
 )
 
 CONTENT_LEFT = 120   # x where text/pill start, just right of the avatar
@@ -75,11 +75,13 @@ async def renderDefault(
 
     cardWidth = max(CARD_MIN_WIDTH, int(rightEdge) + RIGHT_PAD)
 
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{cardWidth}" height="{CARD_HEIGHT}" viewBox="0 0 {cardWidth} {CARD_HEIGHT}">
-  {cardDefs}
-  <rect width="{cardWidth}" height="{CARD_HEIGHT}" rx="12" fill="{cardFill}" />
-  {avatarMarkup}
-  {nameMarkup}
-  {tagMarkup}
-  {activityMarkup}
-</svg>'''
+    return buildSvgRoot(
+        width=cardWidth,
+        height=CARD_HEIGHT,
+        viewBox=f"0 0 {cardWidth} {CARD_HEIGHT}",
+        body=(
+            f'{cardDefs}'
+            f'<rect width="{cardWidth}" height="{CARD_HEIGHT}" rx="12" fill="{cardFill}" />'
+            f'{avatarMarkup}{nameMarkup}{tagMarkup}{activityMarkup}'
+        ),
+    )                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  

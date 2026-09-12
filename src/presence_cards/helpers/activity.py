@@ -123,7 +123,7 @@ def buildActivityRow(
     y: int,
     name: str,
     *,
-    art: int = 72,           # ← was hardcoded inside; now injectable, default preserves behavior
+    art: int = 120,           # ← was hardcoded inside; now injectable, default preserves behavior
     textColor: str,
     subTextColor: str,
     accentColor: str,
@@ -167,21 +167,21 @@ def buildActivityRow(
         )
 
     textX = x + art + 16                     # already derives from art ✓
-    lineY = y + 20
+    lineY = y + 24
     parts.append(buildText(x=textX, y=lineY, content=name,
-                           fill=textColor, size=18, weight="700"))
-    lineY += 24
+                           fill=textColor, size=24, weight="700"))
+    lineY += 28
 
     if details:
         parts.append(buildText(x=textX, y=lineY, content=details,
-                               fill=subTextColor, size=15, weight="400"))
-        lineY += 22
+                               fill=subTextColor, size=20, weight="400"))
+        lineY += 28
 
     if start is not None:
         parts.append(buildGamepadIcon(textX, lineY - 12, color=accentColor, size=15))
         parts.append(buildAnimatedTimer(
             x=textX + 20, y=lineY, start=start,
-            color=accentColor, size=15, weight="600",
+            color=accentColor, size=20, weight="600",
         ))
 
     return "".join(parts)

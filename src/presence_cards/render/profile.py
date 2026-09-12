@@ -8,7 +8,7 @@ from ..themes import Theme
 from ..helpers.activity import buildActivityRow, buildActivityCard
 from ..helpers.avatar import buildAvatarCircle
 from ..helpers.pill import buildHandlePillRow, buildStatusPill
-from ..helpers.primitives import buildText, fetchDataUri, buildCardBackground
+from ..helpers.primitives import buildText, fetchDataUri, buildCardBackground, buildSvgRoot
 from ..helpers.color import derivePanel
 
 # ── canvas ─────────────────────────────────────────────────────────
@@ -20,7 +20,7 @@ CARD_BOTTOM_PAD   = 26    # last element bottom → card bottom edge
 
 LAYOUT = {
     "corner":      24,
-    "bannerH":     175,
+    "bannerH":     192,
     "avatarCx":    100,
     "avatarCy":    174,
     "avatarR":     84,
@@ -28,20 +28,20 @@ LAYOUT = {
     "ringWidth":   6,
     "pad":         28,
 
-    "nameY":       304,
+    "nameY":       308,
     "nameSize":    40,
 
-    "foBoxY":      320,
+    "foBoxY":      322,
     "foBoxH":      40,
 
-    "activityArt": 72,    # SINGLE source of truth — matches buildActivityRow default
+    "activityArt": 120,    # SINGLE source of truth — matches buildActivityRow default
     "activityPad": 14,
 
 # ── custom status pill (floats beside avatar, independent of derive chain) ──
-    "statusX":     200,   # ≈ avatar right edge, slight overlap like the screenshot
+    "statusX":     225,   # ≈ avatar right edge, slight overlap like the screenshot
     "statusY":     190,   # ≈ avatarCy - pill/2, sits at avatar's upper-middle
-    "statusW":     260,   # hard truncation boundary for long statuses
-    "statusH":     52,    # box ≥ pill height (~34) so nothing clips
+    "statusW":     450,   # hard truncation boundary for long statuses
+    "statusH":     85,    # fits 2 wrapped lines: 2×~26 line-height + 2×14 pad ≈ 80
 }
 
 
@@ -128,17 +128,21 @@ async def renderProfile(
             presence.customStatusEmojiUrl,
             theme,
         )
+
     statusFo = (
-        f'<foreignObject x="{L["statusX"]}" y="{L["statusY"]}" '
-        f'width="{L["statusW"]}" height="{L["statusH"]}">{statusPill}</foreignObject>'
+        f'<foreignObject x="{L["statusX"] - 16}" y="{L["statusY"] - 16}" '
+        f'width="{L["statusW"] + 16}" height="{L["statusH"] + 16}">{statusPill}</foreignObject>'
         if statusPill else ""
     )
 
     statusTail = ""
     if statusPill:
-        bx, by = L["statusX"] - 2, L["statusY"] - 6
-        dot = lambda cx, cy, r: f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{theme["tagPill"]}" />'
-        statusTail = dot(bx, by, 4) + dot(bx + 8, by + 8, 7)
+        dot = lambda cx, cy, r: (
+            f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{theme["tagPill"]}" />'
+        )
+        bx, by = L["statusX"], L["statusY"]
+        # big dot hugs bubble top edge; small dot trails up toward avatar
+        statusTail = dot(bx + 24, by - 15, 24) + dot(bx - 8, by - 40, 8)
 
     activityBlock = ""
     vbH = VB_H_BASE
@@ -154,7 +158,7 @@ async def renderProfile(
 
         panelColor = derivePanel(theme["background"])
 
-        panel, innerX, innerY, innerW = buildActivityCard(
+        panel, innerX, innerY, _ = buildActivityCard(
             x=L["pad"], y=L["activityY"],
             width=VB_W - L["pad"] * 2, height=L["activityH"],
             fill=panelColor, padding=L["activityPad"],
@@ -175,12 +179,13 @@ async def renderProfile(
 
     height = int(width * vbH / VB_W)
 
-    return (
-        f'<svg xmlns="http://www.w3.org/2000/svg" '
-        f'width="{width}" height="{height}" viewBox="0 0 {VB_W} {vbH}">'
-        f'{cardDefs}'
-        f'<rect width="{VB_W}" height="{vbH}" rx="{L["corner"]}" '
-        f'fill="{cardFill}" />'
-        f'{banner}{avatar}{name}{handleAndPill}{activityBlock}{statusTail}{statusFo}'
-        f'</svg>'
+    return buildSvgRoot(
+        width=width,
+        height=height,
+        viewBox=f"0 0 {VB_W} {vbH}",
+        body=(
+            f'{cardDefs}'
+            f'<rect width="{VB_W}" height="{vbH}" rx="{L["corner"]}" fill="{cardFill}" />'
+            f'{banner}{avatar}{name}{handleAndPill}{activityBlock}{statusTail}{statusFo}'
+        ),
     )

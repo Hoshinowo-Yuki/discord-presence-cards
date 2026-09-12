@@ -18,5 +18,5 @@ async def enrichPresence(presence: Presence, userId: int) -> None:
     if user is None:
         return
     if user.banner:
-        presence.bannerUrl = str(user.banner.replace(format="gif", size=1024).url)
+        presence.bannerUrl = str(user.banner.replace(format="png", size=1024).url)
     presence.accentColor = user.accent_color.value if user.accent_color else None

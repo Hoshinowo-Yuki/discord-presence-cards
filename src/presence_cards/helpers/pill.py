@@ -8,7 +8,7 @@ from presence_cards.store import Presence
 
 from .primitives import FONT_STACK, buildText, escapeXml, estimateTextWidth
 
-def _buildFlagBadges(badgeUris: list[str], size: int = 28, gap: int = 4) -> str:
+def _buildFlagBadges(badgeUris: list[str], size: int = 30, gap: int = 4) -> str:
     """Inline-flex group of flag badges (data-URI SVGs) for the foreignObject row.
     Grouped so their internal gap is tight, independent of the row's 8px gap."""
     if not badgeUris:
@@ -27,38 +27,40 @@ def buildStatusPill(
     emojiUnicode: Optional[str],
     emojiUrl: Optional[str],
     theme: dict,
-    emojiSize: int = 26,
+    emojiSize: int = 28,
 ) -> str:
-    """Custom-status bubble: [emoji] italic text. Emoji is either a custom
-    CDN asset (<img>) or a unicode codepoint (<span>, font-rendered)."""
+    """Custom-status bubble matching Discord: rounded rect, emoji left
+    (top-aligned to line 1), italic text wrapping to 2 lines. No tail."""
     if not (text or emojiUnicode or emojiUrl):
         return ""
 
     if emojiUrl:
         emojiEl = (
             f'<img src="{emojiUrl}" width="{emojiSize}" height="{emojiSize}" '
-            f'style="display:block" />'
+            f'style="display:block;flex:none;border-radius:50%" />'
         )
     elif emojiUnicode:
         emojiEl = (
-            f'<span style="font-family:{FONT_STACK};'
-            f'font-size:{emojiSize}px">{escapeXml(emojiUnicode)}</span>'
+            f'<span style="font-family:{FONT_STACK};flex:none;'
+            f'font-size:{emojiSize}px;line-height:26px">{escapeXml(emojiUnicode)}</span>'
         )
     else:
         emojiEl = ""
 
     textEl = (
         f'<span style="font:italic 400 20px {FONT_STACK};'
-        f'color:{theme["subtext"]};overflow:hidden;text-overflow:ellipsis;'
-        f'white-space:nowrap">{escapeXml(text)}</span>'
+        f'color:{theme["subtext"]};min-width:0;'
+        f'display:-webkit-box;-webkit-box-orient:vertical;'
+        f'-webkit-line-clamp:2;overflow:hidden">'
+        f'{escapeXml(text)}</span>'
         if text else ""
     )
 
     return (
-        f'<div xmlns="http://www.w3.org/1999/xhtml" '   # ← this was missing
-        f'style="display:inline-flex;align-items:center;gap:9px;'
-        f'padding:12px 24px;border-radius:14px;background:{theme["tagPill"]};'
-        f'max-width:100%;overflow:hidden">'
+        f'<div xmlns="http://www.w3.org/1999/xhtml" '
+        f'style="display:flex;align-items:flex-start;gap:12px;'
+        f'padding:16px 22px;border-radius:20px;background:{theme["tagPill"]};'
+        f'max-width:100%;box-sizing:border-box;overflow:hidden">'
         f'{emojiEl}{textEl}</div>'
     )
 
