@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: MIT
-"""Single source of truth for presence status: colour AND shape."""
 
 # Discord-style status colours, keyed by presence status.
 STATUS_COLORS: dict[str, str] = {
@@ -11,6 +10,20 @@ STATUS_COLORS: dict[str, str] = {
 
 
 def resolveStatusColor(status: str) -> str:
+    """
+    Resolve a presence status to its Discord-style color.
+
+    Parameters
+    ----------
+    status : str
+        The presence status (e.g. "online", "idle", "dnd", "offline").
+
+    Returns
+    -------
+    str
+        The hex color for the status, falling back to the offline color for
+        an unknown status.
+    """
     return STATUS_COLORS.get(status, STATUS_COLORS["offline"])
 
 
@@ -19,51 +32,73 @@ def buildStatusIndicator(
     cy: int,
     radius: int,
     status: str,
-    ringColor: str,
+    backgroundColor: str,
 ) -> str:
-    """Build a Discord-accurate status indicator.
-
-    Each status is a distinct SHAPE, not just a colour:
-      online  -> solid filled circle
-      idle    -> crescent (circle with an offset cutout)
-      dnd     -> circle with a horizontal bar punched through
-      offline -> hollow ring (donut)
-
-    `ringColor` is the card background — used both for the gap around the
-    indicator and to 'punch out' the negative space inside each shape.
-    Colour is resolved here from `status`, so shape and colour can't drift.
     """
+    Build a Discord-accurate status indicator.
+
+    Each status is a distinct shape, not just a color::
+
+        online  -> solid filled circle
+        idle    -> crescent (circle with an offset cutout)
+        dnd     -> circle with a horizontal bar punched through
+        offline -> hollow ring (donut)
+
+    The color is resolved here from `status`, so shape and color cannot
+    drift out of sync.
+
+    Parameters
+    ----------
+    cx : int
+        The x-coordinate of the indicator's center.
+    cy : int
+        The y-coordinate of the indicator's center.
+    radius : int
+        The radius of the indicator in pixels.
+    status : str
+        The presence status, which selects both the shape and the color.
+    backgroundColor : str
+        The card background color. Used both for the gap around the
+        indicator (the backdrop circle) and to punch out the negative
+        space inside each shape, so the card shows through.
+
+    Returns
+    -------
+    str
+        The SVG markup for the backdrop plus the status shape.
+    """
+
     color = resolveStatusColor(status)
 
     # Background circle creates the gap between the avatar edge and the dot,
     # exactly like Discord separating the indicator from the avatar ring.
     gap = max(2, int(radius * 0.5625))
-    backdrop = f'<circle cx="{cx}" cy="{cy}" r="{radius + gap}" fill="{ringColor}" />'
+    backdrop = f'<circle cx="{cx}" cy="{cy}" r="{radius + gap}" fill="{backgroundColor}" />'
 
     if status == "online":
         shape = f'<circle cx="{cx}" cy="{cy}" r="{radius}" fill="{color}" />'
 
     elif status == "idle":
-        cutCx = cx - radius * 0.375
-        cutCy = cy - radius * 0.3125
+        cutoutCx = cx - radius * 0.375
+        cutoutCy = cy - radius * 0.3125
         shape = (
             f'<circle cx="{cx}" cy="{cy}" r="{radius}" fill="{color}" />'
-            f'<circle cx="{cutCx}" cy="{cutCy}" r="{radius * 0.75}" fill="{ringColor}" />'
+            f'<circle cx="{cutoutCx}" cy="{cutoutCy}" r="{radius * 0.75}" fill="{backgroundColor}" />'
         )
 
     elif status == "dnd":
-        barW = radius * 1.3
-        barH = max(2.0, radius * 0.45)
+        barWidth = radius * 1.3
+        barHeight = max(2.0, radius * 0.45)
         shape = (
             f'<circle cx="{cx}" cy="{cy}" r="{radius}" fill="{color}" />'
-            f'<rect x="{cx - barW / 2}" y="{cy - barH / 2}" '
-            f'width="{barW}" height="{barH}" rx="{barH / 2}" fill="{ringColor}" />'
+            f'<rect x="{cx - barWidth / 2}" y="{cy - barHeight / 2}" '
+            f'width="{barWidth}" height="{barHeight}" rx="{barHeight / 2}" fill="{backgroundColor}" />'
         )
 
     else:  # offline / invisible -> hollow ring
         shape = (
             f'<circle cx="{cx}" cy="{cy}" r="{radius}" fill="{color}" />'
-            f'<circle cx="{cx}" cy="{cy}" r="{int(radius * 0.5)}" fill="{ringColor}" />'
+            f'<circle cx="{cx}" cy="{cy}" r="{int(radius * 0.5)}" fill="{backgroundColor}" />'
         )
 
     return backdrop + shape

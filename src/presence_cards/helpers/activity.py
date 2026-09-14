@@ -1,9 +1,31 @@
+"""
+The MIT License (MIT)
+
+Copyright (c) 2026 Hoshino Yuki
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+"""
+
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime, timezone
-from tracemalloc import start
 from typing import Optional
-
 from .primitives import buildText
 
 
@@ -21,7 +43,27 @@ _GAMEPAD_PATH = (
 )
 
 def buildGamepadIcon(x: int, y: int, *, color: str, size: int = 15) -> str:
-    """Discord's controller glyph as a path, scaled to `size` px, top-left at (x,y)."""
+    """
+    Build an SVG path for a gamepad icon, scaled to the specified size and positioned at (x, y).
+
+    Parameters
+    ----------
+    x : int
+        The x-coordinate for the top-left corner of the icon.
+    y : int
+        The y-coordinate for the top-left corner of the icon.
+    color : str
+        The fill color for the icon.
+    size : int, optional
+        The size of the icon in pixels (default is 15).
+
+    Returns
+    -------
+    str
+        An SVG path for the gamepad icon.
+
+    """
+
     scale = size / 24  # the path is authored in a 24-unit box
     return (
         f'<path transform="translate({x} {y}) scale({scale:.5f})" '
@@ -29,7 +71,21 @@ def buildGamepadIcon(x: int, y: int, *, color: str, size: int = 15) -> str:
         f'd="{_GAMEPAD_PATH}" />'
     )
 
+
 def _fmt(elapsed: int) -> str:
+    """
+    Format a duration in seconds as a clock string.
+
+    Parameters
+    ----------
+    elapsed : int
+        The elapsed time in seconds.
+
+    Returns
+    -------
+    str
+        The duration formatted as "H:MM:SS", or "M:SS" when under an hour.
+    """
     h, rem = divmod(elapsed, 3600)
     m, s = divmod(rem, 60)
     return f"{h}:{m:02d}:{s:02d}" if h else f"{m}:{s:02d}"
@@ -41,15 +97,45 @@ def buildAnimatedTimer(
     start: datetime,
     *,
     color: str,
-    frames: int = 60,      # how many seconds of flip-book to bake
+    frames: int = 60,
     size: int = 20,
     weight: str = "600",
 ) -> str:
-    """A SMIL flip-book counter: `frames` stacked <text>s, one per second.
-
-    Each is hidden except during its 1-second window, so the timer ticks
-    without scripts — works as an <img> and through GitHub's camo proxy.
     """
+    Build a script-free animated timer as a SMIL flip-book.
+
+    Bakes `frames` stacked <text> elements, one per second, each hidden
+    except during its own one-second window.
+    
+    This lets the timer tick without JavaScript, so it survives being embedded as an <img> and
+    passing through GitHub's camo image proxy.
+
+    Parameters
+    ----------
+    x : int
+        The x-coordinate of the timer's text baseline.
+    y : int
+        The y-coordinate of the timer's text baseline.
+    start : datetime
+        The tz-aware start time to count up from. The initial elapsed
+        value is computed against the current UTC time and clamped to
+        zero if `start` is in the future.
+    color : str
+        The fill color for the timer text.
+    frames : int, optional
+        How many seconds of flip-book to bake, i.e. how long the timer
+        animates before it stops (default is 60).
+    size : int, optional
+        The font size in pixels (default is 20).
+    weight : str, optional
+        The font weight (default is "600").
+
+    Returns
+    -------
+    str
+        The concatenated SVG <text> elements for the animated timer.
+    """
+
     base = int((datetime.now(timezone.utc) - start).total_seconds())
     if base < 0:
         base = 0
@@ -58,6 +144,7 @@ def buildAnimatedTimer(
         f"fill:{color};font-family:GG Sans,sans-serif;"
         f"font-size:{size}px;font-weight:{weight}"
     )
+
     parts: list[str] = []
 
     for i in range(frames):
@@ -69,6 +156,7 @@ def buildAnimatedTimer(
             # don't hide the first frame if it's ALSO the last (frames==1)
             sets = "" if isLast else \
                 '<set attributeName="opacity" to="0" begin="1s" fill="freeze"/>'
+
         else:
             initial = "0"
             show = f'<set attributeName="opacity" to="1" begin="{i}s" fill="freeze"/>'
@@ -94,23 +182,35 @@ def buildActivityCard(
     radius: int = 8,
     padding: int = 12,
 ) -> tuple[str, int, int, int]:
-    """A rounded panel that sits behind the activity row.
-
-    Returns (svg, innerX, innerY, innerWidth) so the caller can lay the
-    row out INSIDE the padding instead of re-guessing the offsets.
     """
-    rect = (
-        f'<rect x="{x}" y="{y}" width="{width}" height="{height}" '
-        f'rx="{radius}" ry="{radius}" fill="{fill}" />'
-    )
-    return rect, x + padding, y + padding, width - padding * 2
+    Build a rounded panel that sits behind the activity row.
 
-def buildActivityCard(
-    x: int, y: int, width: int, height: int,
-    *, fill: str, radius: int = 12, padding: int = 14,
-) -> tuple[str, int, int, int]:
-    """Rounded panel behind the activity row.
-    Returns (svg, innerX, innerY, innerWidth)."""
+    Returns the inner offsets alongside the SVG so the caller can lay the
+    row out inside the padding instead of re-deriving the geometry.
+
+    Parameters
+    ----------
+    x : int
+        The x-coordinate of the panel's top-left corner.
+    y : int
+        The y-coordinate of the panel's top-left corner.
+    width : int
+        The panel width in pixels.
+    height : int
+        The panel height in pixels.
+    fill : str
+        The fill color for the panel.
+    radius : int, optional
+        The corner radius in pixels (default is 8).
+    padding : int, optional
+        The inner padding in pixels, inset on all sides (default is 12).
+
+    Returns
+    -------
+    tuple of (str, int, int, int)
+        The panel's SVG <rect>, followed by the inner x, inner y, and
+        inner width for laying out content within the padding.
+    """
     rect = (
         f'<rect x="{x}" y="{y}" width="{width}" height="{height}" '
         f'rx="{radius}" ry="{radius}" fill="{fill}" />'
@@ -123,7 +223,7 @@ def buildActivityRow(
     y: int,
     name: str,
     *,
-    art: int = 120,           # ← was hardcoded inside; now injectable, default preserves behavior
+    art: int = 120,
     textColor: str,
     subTextColor: str,
     accentColor: str,
@@ -134,8 +234,54 @@ def buildActivityRow(
     smallUri: Optional[str] = None,
     clipId: str = "activityArtClip",
 ) -> str:
-    """Activity row: art + badge on the left, up to 3 text lines on the right."""
-    parts: list[str] = []                    # ← removed `art = 72`
+    """
+    Build an activity row: art and badge on the left, text lines on the right.
+
+    Renders the large activity art (or an accent-tinted placeholder when
+    absent), an optional small badge clipped into a ringed circle over its
+    corner, and up to three text lines: the activity name, optional details,
+    and an optional gamepad icon paired with an animated elapsed timer.
+
+    Parameters
+    ----------
+    x : int
+        The x-coordinate of the row's top-left corner.
+    y : int
+        The y-coordinate of the row's top-left corner.
+    name : str
+        The activity name, rendered as the first text line.
+    art : int, optional
+        The size of the large activity art in pixels. All other offsets
+        (badge, text column) derive from this (default is 120).
+    textColor : str
+        The fill color for the activity name.
+    subTextColor : str
+        The fill color for the details line.
+    accentColor : str
+        The accent color used for the art placeholder, the gamepad icon,
+        and the timer.
+    ringColor : str
+        The fill color for the ring drawn behind the small badge.
+    details : Optional[str], optional
+        The details line rendered under the name, if any. Defaults to None.
+    start : Optional[datetime], optional
+        The tz-aware activity start time. When provided, a gamepad icon and
+        animated timer are rendered. Defaults to None.
+    largeUri : Optional[str], optional
+        The URI for the large activity art. When absent, an accent-tinted
+        placeholder is drawn instead. Defaults to None.
+    smallUri : Optional[str], optional
+        The URI for the small corner badge, if any. Defaults to None.
+    clipId : str, optional
+        The base id for the SVG clip paths. The small badge derives its own
+        id by appending "Small" (default is "activityArtClip").
+
+    Returns
+    -------
+    str
+        The concatenated SVG elements for the full activity row.
+    """
+    parts: list[str] = []
 
     if largeUri:
         parts.append(

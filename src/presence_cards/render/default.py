@@ -1,14 +1,17 @@
 # SPDX-License-Identifier: MIT
+"""Default presence card: a compact horizontal row that grows to fit."""
 
 import httpx
-
 from ..store import Presence
 from ..themes import Theme
-
 from ..helpers.avatar import buildAvatarCircle
 from ..helpers.pill import buildServerTagPill
 from ..helpers.primitives import (
-    buildText, estimateTextWidth, fetchDataUri, buildCardBackground, buildSvgRoot,
+    buildText,
+    estimateTextWidth,
+    fetchDataUri,
+    buildCardBackground,
+    buildSvgRoot,
 )
 
 CONTENT_LEFT = 120   # x where text/pill start, just right of the avatar
@@ -23,7 +26,32 @@ async def renderDefault(
     httpClient: httpx.AsyncClient,
     hideSpotify: bool = False,
 ) -> str:
-    """Render the default presence card as an SVG string. Width grows to fit."""
+    """
+    This function is a [coroutine](https://docs.python.org/3/library/asyncio-task.html#coroutine).
+
+    Render the default presence card as an SVG string.
+
+    The card is a compact horizontal row (avatar, name, optional server-tag
+    pill, optional activity line) whose width grows to fit its content down
+    to a minimum of `CARD_MIN_WIDTH`.
+
+    Parameters
+    ----------
+    presence : Presence
+        The presence record to render.
+    theme : Theme
+        The resolved theme supplying colors and any background gradient.
+    httpClient : httpx.AsyncClient
+        The async client used to inline the avatar and badge images.
+    hideSpotify : bool, optional
+        When True, the activity line is suppressed (default is False).
+
+    Returns
+    -------
+    str
+        The complete SVG document for the card.
+    """
+
     avatarUri = await fetchDataUri(presence.avatarUrl, httpClient)
 
     cardDefs, cardFill = buildCardBackground(theme)
@@ -52,25 +80,25 @@ async def renderDefault(
         if presence.serverTagBadgeUrl:
             badgeUri = await fetchDataUri(presence.serverTagBadgeUrl, httpClient)
 
-        tagMarkup, pillW = buildServerTagPill(
+        tagMarkup, pillWidth = buildServerTagPill(
             x=pillX, cy=48,
             tagText=presence.serverTagText,
             badgeUri=badgeUri,
             textColor=theme["text"],
             pillColor=theme["tagPill"],
         )
-        rightEdge = pillX + pillW
+        rightEdge = pillX + pillWidth
 
     activityMarkup = ""
     if presence.activityName and not hideSpotify:
-        actSize = 14
+        activitySize = 14
         activityMarkup = buildText(
             x=CONTENT_LEFT, y=78, content=presence.activityName,
-            fill=theme["subtext"], size=actSize,
+            fill=theme["subtext"], size=activitySize,
         )
         rightEdge = max(
             rightEdge,
-            CONTENT_LEFT + estimateTextWidth(presence.activityName, actSize),
+            CONTENT_LEFT + estimateTextWidth(presence.activityName, activitySize),
         )
 
     cardWidth = max(CARD_MIN_WIDTH, int(rightEdge) + RIGHT_PAD)
@@ -84,4 +112,4 @@ async def renderDefault(
             f'<rect width="{cardWidth}" height="{CARD_HEIGHT}" rx="12" fill="{cardFill}" />'
             f'{avatarMarkup}{nameMarkup}{tagMarkup}{activityMarkup}'
         ),
-    )                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+    )
