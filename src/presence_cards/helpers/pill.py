@@ -252,11 +252,13 @@ def buildHandlePillRow(
     pill = ""
 
     if presence.serverTagText:
+        badgeSize = 16
         badgeImg = (
-            f'<img src="{badgeUri}" width="16" height="16" '
+            f'<img src="{badgeUri}" width="{badgeSize}" height="{badgeSize}" '
             f'style="display:block;border-radius:3px" />'
             if badgeUri else ""
         )
+
         pill = (
             f'<div style="display:inline-flex;align-items:center;gap:5px;'
             f'padding:4px 14px 4px 11px;border-radius:13px;background:{theme["tagPill"]};'
