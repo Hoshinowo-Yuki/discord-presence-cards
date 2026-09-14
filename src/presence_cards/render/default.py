@@ -99,7 +99,7 @@ async def renderDefault(
         cy=60,
         radius=36,
         status=presence.status,
-        ringColor=theme["background"],
+        backgroundColor=theme["background"],
         clipId=f"avatarClip-{uid}",
     )
 
