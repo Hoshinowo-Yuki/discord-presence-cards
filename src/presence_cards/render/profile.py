@@ -79,7 +79,12 @@ LAYOUT = {
     "statusY":                190,   # ≈ avatarCy - pill/2, sits at avatar's upper-middle
     "statusW":                450,   # hard truncation boundary for long statuses
     "statusH":                85,    # fits 2 wrapped lines: 2×~26 line-height + 2×14 pad ≈ 80, CJK + 5 = 85
-    "statusForeignObjectBleed": 16,  # foreignObject overflow allowance around the bubble (left/top origin + w/h)
+
+    # left/top overflow room; right/bottom need none 
+    # statusW/H are hard truncation bounds so content never reaches them.
+    # NOTE: this also nudges the bubble up-left by 16px (foreignObject origin relocates content), 
+    # which is intentional overlap, not a bug.
+    "statusForeignObjectBleed": 16,
 
     # status-bubble tail dots (offsets are relative to statusX / statusY)
     "tailBigRadius":   24,   # large dot: hugs the bubble's top edge
