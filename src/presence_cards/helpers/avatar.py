@@ -90,6 +90,11 @@ def buildAvatarCircle(
     )
 
     if decoUri:
+        # Discord avatar decorations are designed to overflow the avatar circle 
+        # (decoScale > 1). Clipping to the avatar would defeat decoScale
+        # by cropping exactly the overflow it adds.
+        #
+        # This behavior is intentional.
         dSize = int(size * decoScale)
         dx = cx - dSize // 2
         dy = cy - dSize // 2
