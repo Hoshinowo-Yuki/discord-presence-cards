@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: MIT
-
 import asyncio
 import os
 from contextlib import asynccontextmanager
