@@ -30,6 +30,7 @@ import httpx
 from xml.sax.saxutils import escape
 from functools import lru_cache
 from pathlib import Path
+from ..themes import Theme
 
 # A transparent 1x1 PNG, used when an image fetch fails so the card still renders.
 FALLBACK_PNG_URI = (
@@ -194,7 +195,7 @@ def buildText(
     )
 
 
-def buildCardBackground(theme, defsId: str = "cardBg") -> tuple[str, str]:
+def buildCardBackground(theme: Theme, defsId: str = "cardBg") -> tuple[str, str]:
     """
     Build the defs and fill for a card background.
 

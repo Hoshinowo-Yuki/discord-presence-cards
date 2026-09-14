@@ -27,9 +27,14 @@ DEALINGS IN THE SOFTWARE.
 from typing import Optional
 from presence_cards.store import Presence
 from .primitives import FONT_STACK, buildText, escapeXml, estimateTextWidth
+from ..themes import Theme
 
 
-def _buildFlagBadges(badgeUris: list[str], size: int = 30, gap: int = 4) -> str:
+def _buildFlagBadges(
+    badgeUris: list[str],
+    size: int = 30,
+    gap: int = 4
+) -> str:
     """
     Build an inline-flex group of flag badges for the foreignObject row.
 
@@ -69,7 +74,7 @@ def buildStatusPill(
     text: Optional[str],
     emojiUnicode: Optional[str],
     emojiUrl: Optional[str],
-    theme: dict,
+    theme: Theme,
     emojiSize: int = 28,
     maxHeight: int = 85,
 ) -> str:
@@ -89,7 +94,7 @@ def buildStatusPill(
     emojiUrl : Optional[str]
         A URL for a custom emoji image, which takes precedence over
         `emojiUnicode`.
-    theme : dict
+    theme : Theme
         The theme mapping; uses "tagPill" for the background and "subtext"
         for the text color.
     emojiSize : int, optional
@@ -208,7 +213,7 @@ def buildHandlePillRow(
     width: int,
     height: int,
     presence: Presence,
-    theme: dict,
+    theme: Theme,
     badgeUri: Optional[str],
 ) -> str:
     """
@@ -230,7 +235,7 @@ def buildHandlePillRow(
     presence : Presence
         The presence record; supplies the username, server-tag text, and
         flag badge URIs.
-    theme : dict
+    theme : Theme
         The theme mapping; uses "subtext" for the handle, and "tagPill" and
         "text" for the pill.
     badgeUri : Optional[str]
