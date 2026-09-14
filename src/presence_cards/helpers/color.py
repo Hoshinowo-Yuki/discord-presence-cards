@@ -24,14 +24,15 @@
 # SPDX-License-Identifier: MIT
 
 """
-Color derivations. 
+Color primitives: parsing, luminance, and lightness derivations.
 
-Panels are computed from the theme background so any user theme
-gets a correct raised-card color without declaring one.
+Pure color math with no theme dependencies — hex/named-color normalization,
+gradient and panel derivation, and the luminance/lightness helpers the theme
+layer builds on.
+
+Panels are derived from a background so any theme gets a
+correct raised-card color without declaring one.
 """
-
-from typing import Optional
-from ..themes import Theme, resolveTheme, DEFAULT_THEME
 
 _NAMED_COLORS = {
     "blurple": "#5865f2",
@@ -106,48 +107,6 @@ def gradientFromColor(raw: str) -> tuple[str, str]:
         return base, shiftLightness(base, 0.28)       # dark base -> fade lighter
 
     return shiftLightness(base, -0.28), base          # light base -> fade darker
-
-
-def themeFromAccentColor(accentColor: Optional[int]) -> Theme:
-    """
-    Build a theme from a Discord accent color, or fall back to the default.
-
-    The text, subtext, and tag-pill colors are derived from the accent so
-    the result stays legible whether the accent is dark or light.
-
-    Shifts are pushed toward the opposite end of the lightness range, and pushed
-    harder when the accent is near an extreme, so a near-white accent still
-    yields a visibly darker pill and subtext.
-
-    Parameters
-    ----------
-    accentColor : Optional[int]
-        The Discord accent color as a 24-bit integer, or None to use the
-        default theme.
-
-    Returns
-    -------
-    Theme
-        The derived theme, or the resolved default theme when `accentColor`
-        is None.
-    """
-
-    if accentColor is None:
-        return resolveTheme(DEFAULT_THEME)
-
-    background = f"#{accentColor:06x}"
-    isDark = luminance(background) < 0.5
-
-    subtextShift = 0.45 if isDark else -0.45
-    pillShift = 0.18 if isDark else -0.18
-
-    return {
-        "background": background,
-        "text":    "#ffffff" if isDark else "#060607",
-        "subtext": shiftLightness(background, subtextShift),
-        "tagPill": shiftLightness(background, pillShift),
-        "accent":  "#3ba55d",
-    }
 
 
 def _hexToRgb(hexColor: str) -> tuple[int, int, int]:

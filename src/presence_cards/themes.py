@@ -59,20 +59,32 @@ class Theme(TypedDict):
     bgGradient: NotRequired[tuple[str, str]]
 
 
+# Canonical text colors for dark vs. light surfaces. Shared by the named themes
+# below and by the resolver's derived (accent/gradient) themes, so "the text
+# color for a dark surface" is defined in exactly one place.
+# Note: editing these ripples into the resolver's computed text — that coupling
+# is intentional.
+TEXT_ON_DARK  = "#ffffff"
+TEXT_ON_LIGHT = "#060607"
+
+# The default brand accent, shared by the dark theme and every derived theme.
+ACCENT_GREEN  = "#3ba55d"
+
+
 THEMES: dict[str, Theme] = {
     "dark": {
         "background": "#2f3136",
-        "text":       "#ffffff",
+        "text":       TEXT_ON_DARK,
         "subtext":    "#b9bbbe",
         "tagPill":    "#4f545c",
-        "accent":     "#3ba55d",
+        "accent":     ACCENT_GREEN,
     },
     "light": {
         "background": "#ffffff",
-        "text":       "#060607",
+        "text":       TEXT_ON_LIGHT,
         "subtext":    "#4f5660",
         "tagPill":    "#e3e5e8",
-        "accent":     "#248046",
+        "accent":     "#248046",   # deliberately darker than ACCENT_GREEN for contrast on white; left literal
     },
 }
 

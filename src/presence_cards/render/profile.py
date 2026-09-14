@@ -33,6 +33,7 @@ Layout geometry is derived from a handful of spacing
 primitives rather than hand-typed.
 """
 
+import secrets
 import httpx
 from ..store import Presence
 from ..themes import Theme
@@ -142,6 +143,10 @@ async def renderProfile(
     width is the caller's `width`, with height scaled to preserve
     the aspect ratio.
 
+    All internal SVG element ids are suffixed with a per-render token so
+    that multiple cards embedded in a single document keep isolated id
+    namespaces and never cross-clip one another.
+
     Parameters
     ----------
     presence : Presence
@@ -162,6 +167,10 @@ async def renderProfile(
     """
     layout = LAYOUT
 
+    # Per-render id namespace. Suffix (not prefix) so ids never start with a
+    # digit — XML ids must begin with a letter/underscore.
+    uid = secrets.token_hex(4)
+
     avatarUri = await fetchDataUri(presence.avatarUrl, httpClient)
 
     bannerUri = (
@@ -180,16 +189,16 @@ async def renderProfile(
     )
 
     # card background fill (flat color OR gradient)
-    cardDefs, cardFill = buildCardBackground(theme, defsId="profCardBg")
+    cardDefs, cardFill = buildCardBackground(theme, defsId=f"cardBg-{uid}")
 
     if bannerUri:
         banner = (
-            f'<defs><clipPath id="bannerClip">'
+            f'<defs><clipPath id="bannerClip-{uid}">'
             f'<rect x="0" y="0" width="{VIEWBOX_WIDTH}" height="{layout["bannerH"]}" '
             f'rx="{layout["corner"]}" /></clipPath></defs>'
             f'<image href="{bannerUri}" x="0" y="0" width="{VIEWBOX_WIDTH}" '
             f'height="{layout["bannerH"]}" preserveAspectRatio="xMidYMid slice" '
-            f'clip-path="url(#bannerClip)" />'
+            f'clip-path="url(#bannerClip-{uid})" />'
         )
 
     else:
@@ -206,7 +215,7 @@ async def renderProfile(
         backgroundColor=theme["background"],
         decoUri=decoUri, decoScale=layout["decoScale"],
         ringWidth=layout["ringWidth"],
-        clipId="profAvatarClip",
+        clipId=f"avatarClip-{uid}",
     )
 
     name = buildText(
@@ -288,6 +297,7 @@ async def renderProfile(
             details=presence.activityDetails,
             start=presence.activityStart,
             largeUri=largeUri, smallUri=smallUri,
+            clipId=f"activityArtClip-{uid}",
         )
         activityBlock = panel + row
         viewBoxHeight = VIEWBOX_HEIGHT_ACTIVITY

@@ -1,9 +1,54 @@
+"""
+The MIT License (MIT)
+
+Copyright (c) 2026 Hoshino Yuki
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+"""
+
 # SPDX-License-Identifier: MIT
-"""Theme resolution: map the public theme/color/accent params to a Theme."""
 
 from typing import Optional
-from ..themes import Theme, resolveTheme, DEFAULT_THEME
+from ..themes import (
+    Theme,
+    resolveTheme,
+    DEFAULT_THEME,
+    TEXT_ON_DARK,
+    TEXT_ON_LIGHT,
+    ACCENT_GREEN,
+)
 from .color import luminance, shiftLightness, gradientFromColor
+
+
+# Luminance below this reads as a dark surface (light text, lightening shifts).
+_DARK_LUM_THRESHOLD = 0.5
+
+# How far subtext and tag pills move off the background. Sign is applied at the
+# call site: lighten on dark surfaces, darken on light ones.
+_SUBTEXT_SHIFT      = 0.40
+_PILL_SHIFT         = 0.12
+_PILL_SHIFT_EXTREME = 0.22   # used when the accent is near-white/near-black
+
+# A background counts as "extreme" outside this luminance band, where the normal
+# pill shift would be too subtle to separate the pill from the background.
+_EXTREME_LO = 0.15
+_EXTREME_HI = 0.85
 
 
 def themeFromGradient(top: str, bottom: str) -> Theme:
@@ -28,15 +73,15 @@ def themeFromGradient(top: str, bottom: str) -> Theme:
     """
 
     lighterStop = top if luminance(top) > luminance(bottom) else bottom
-    isDark = luminance(lighterStop) < 0.5
+    isDark = luminance(lighterStop) < _DARK_LUM_THRESHOLD
 
     return {
         "background": bottom,                 # solid fallback
         "bgGradient": (top, bottom),
-        "text":    "#ffffff" if isDark else "#060607",
-        "subtext": shiftLightness(lighterStop, 0.40 if isDark else -0.40),
-        "tagPill": shiftLightness(bottom, 0.12 if isDark else -0.12),
-        "accent":  "#3ba55d",
+        "text":    TEXT_ON_DARK if isDark else TEXT_ON_LIGHT,
+        "subtext": shiftLightness(lighterStop, _SUBTEXT_SHIFT if isDark else -_SUBTEXT_SHIFT),
+        "tagPill": shiftLightness(bottom, _PILL_SHIFT if isDark else -_PILL_SHIFT),
+        "accent":  ACCENT_GREEN,
     }
 
 
@@ -67,16 +112,17 @@ def themeFromAccentBg(accentColor: Optional[int]) -> Theme:
 
     background = f"#{accentColor:06x}"
     lum = luminance(background)
-    isDark = lum < 0.5
-    isExtreme = lum > 0.85 or lum < 0.15      # near-white / near-black (e.g. #f0f0f0)
-    pillShift = (0.22 if isDark else -0.22) if isExtreme else (0.12 if isDark else -0.12)
+    isDark = lum < _DARK_LUM_THRESHOLD
+    isExtreme = lum > _EXTREME_HI or lum < _EXTREME_LO
+    pillShift = (_PILL_SHIFT_EXTREME if isDark else -_PILL_SHIFT_EXTREME) if isExtreme \
+        else (_PILL_SHIFT if isDark else -_PILL_SHIFT)
 
     return {
         "background": background,
-        "text":    "#ffffff" if isDark else "#060607",
-        "subtext": shiftLightness(background, 0.40 if isDark else -0.40),
+        "text":    TEXT_ON_DARK if isDark else TEXT_ON_LIGHT,
+        "subtext": shiftLightness(background, _SUBTEXT_SHIFT if isDark else -_SUBTEXT_SHIFT),
         "tagPill": shiftLightness(background, pillShift),
-        "accent":  "#3ba55d",
+        "accent":  ACCENT_GREEN,
     }
 
 

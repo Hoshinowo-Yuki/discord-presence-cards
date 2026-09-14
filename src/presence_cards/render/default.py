@@ -1,6 +1,35 @@
+# The MIT License (MIT)
+#
+# Copyright (c) 2026 Hoshino Yuki
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
 # SPDX-License-Identifier: MIT
-"""Default presence card: a compact horizontal row that grows to fit."""
 
+"""
+Default presence card.
+
+A compact horizontal row that grows to fit.
+"""
+
+import secrets
 import httpx
 from ..store import Presence
 from ..themes import Theme
@@ -35,6 +64,10 @@ async def renderDefault(
     pill, optional activity line) whose width grows to fit its content down
     to a minimum of `CARD_MIN_WIDTH`.
 
+    All internal SVG element ids are suffixed with a per-render token so
+    that multiple cards embedded in a single document keep isolated id
+    namespaces and never cross-clip one another.
+
     Parameters
     ----------
     presence : Presence
@@ -52,9 +85,13 @@ async def renderDefault(
         The complete SVG document for the card.
     """
 
+    # Per-render id namespace. Suffix (not prefix) so ids never start with a
+    # digit — XML ids must begin with a letter/underscore.
+    uid = secrets.token_hex(4)
+
     avatarUri = await fetchDataUri(presence.avatarUrl, httpClient)
 
-    cardDefs, cardFill = buildCardBackground(theme)
+    cardDefs, cardFill = buildCardBackground(theme, defsId=f"cardBg-{uid}")
 
     avatarMarkup = buildAvatarCircle(
         avatarUri=avatarUri,
@@ -63,6 +100,7 @@ async def renderDefault(
         radius=36,
         status=presence.status,
         ringColor=theme["background"],
+        clipId=f"avatarClip-{uid}",
     )
 
     nameSize = 20
