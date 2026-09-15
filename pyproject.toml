@@ -1,6 +1,6 @@
 [project]
 name = "presence-cards"
-version = "1.0.0"
+version = "1.0.1"
 description = "Discord presence cards rendered as SVG"
 requires-python = ">=3.11"
 dependencies = [
