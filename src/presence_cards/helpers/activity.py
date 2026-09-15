@@ -26,7 +26,7 @@ DEALINGS IN THE SOFTWARE.
 
 from datetime import datetime, timezone
 from typing import Optional
-from .primitives import buildText
+from .primitives import build_text
 
 
 _GAMEPAD_PATH = (
@@ -42,7 +42,7 @@ _GAMEPAD_PATH = (
     "0-2h1V7Z"
 )
 
-def buildGamepadIcon(x: int, y: int, *, color: str, size: int = 15) -> str:
+def build_gamepad_icon(x: int, y: int, *, color: str, size: int = 15) -> str:
     """
     Build an SVG path for a gamepad icon, scaled to the specified size and positioned at (x, y).
 
@@ -86,12 +86,13 @@ def _fmt(elapsed: int) -> str:
     str
         The duration formatted as "H:MM:SS", or "M:SS" when under an hour.
     """
+
     h, rem = divmod(elapsed, 3600)
     m, s = divmod(rem, 60)
     return f"{h}:{m:02d}:{s:02d}" if h else f"{m}:{s:02d}"
 
 
-def buildAnimatedTimer(
+def build_animated_timer(
     x: int,
     y: int,
     start: datetime,
@@ -149,18 +150,18 @@ def buildAnimatedTimer(
 
     for i in range(frames):
         label = _fmt(base + i)
-        isLast = i == frames - 1
+        is_last = i == frames - 1
 
         if i == 0:
             initial = "1"
             # don't hide the first frame if it's ALSO the last (frames==1)
-            sets = "" if isLast else \
+            sets = "" if is_last else \
                 '<set attributeName="opacity" to="0" begin="1s" fill="freeze"/>'
 
         else:
             initial = "0"
             show = f'<set attributeName="opacity" to="1" begin="{i}s" fill="freeze"/>'
-            hide = "" if isLast else \
+            hide = "" if is_last else \
                 f'<set attributeName="opacity" to="0" begin="{i + 1}s" fill="freeze"/>'
             sets = show + hide
 
@@ -172,7 +173,7 @@ def buildAnimatedTimer(
     return "".join(parts)
 
 
-def buildActivityCard(
+def build_activity_card(
     x: int,
     y: int,
     width: int,
@@ -211,6 +212,7 @@ def buildActivityCard(
         The panel's SVG <rect>, followed by the inner x, inner y, and
         inner width for laying out content within the padding.
     """
+
     rect = (
         f'<rect x="{x}" y="{y}" width="{width}" height="{height}" '
         f'rx="{radius}" ry="{radius}" fill="{fill}" />'
@@ -218,21 +220,21 @@ def buildActivityCard(
     return rect, x + padding, y + padding, width - padding * 2
 
 
-def buildActivityRow(
+def build_activity_row(
     x: int,
     y: int,
     name: str,
     *,
     art: int = 120,
-    textColor: str,
-    subTextColor: str,
-    accentColor: str,
-    ringColor: str,
+    text_color: str,
+    sub_text_color: str,
+    accent_color: str,
+    ring_color: str,
     details: Optional[str] = None,
     start: Optional[datetime] = None,
-    largeUri: Optional[str] = None,
-    smallUri: Optional[str] = None,
-    clipId: str = "activityArtClip",
+    large_uri: Optional[str] = None,
+    small_uri: Optional[str] = None,
+    clip_id: str = "activityArtClip",
 ) -> str:
     """
     Build an activity row: art and badge on the left, text lines on the right.
@@ -253,26 +255,26 @@ def buildActivityRow(
     art : int, optional
         The size of the large activity art in pixels. All other offsets
         (badge, text column) derive from this (default is 120).
-    textColor : str
+    text_color : str
         The fill color for the activity name.
-    subTextColor : str
+    sub_text_color : str
         The fill color for the details line.
-    accentColor : str
+    accent_color : str
         The accent color used for the art placeholder, the gamepad icon,
         and the timer.
-    ringColor : str
+    ring_color : str
         The fill color for the ring drawn behind the small badge.
     details : Optional[str], optional
         The details line rendered under the name, if any. Defaults to None.
     start : Optional[datetime], optional
         The tz-aware activity start time. When provided, a gamepad icon and
         animated timer are rendered. Defaults to None.
-    largeUri : Optional[str], optional
+    large_uri : Optional[str], optional
         The URI for the large activity art. When absent, an accent-tinted
         placeholder is drawn instead. Defaults to None.
-    smallUri : Optional[str], optional
+    small_uri : Optional[str], optional
         The URI for the small corner badge, if any. Defaults to None.
-    clipId : str, optional
+    clip_id : str, optional
         The base id for the SVG clip paths. The small badge derives its own
         id by appending "Small" (default is "activityArtClip").
 
@@ -281,53 +283,87 @@ def buildActivityRow(
     str
         The concatenated SVG elements for the full activity row.
     """
+
     parts: list[str] = []
 
-    if largeUri:
+    if large_uri:
         parts.append(
-            f'<defs><clipPath id="{clipId}"><rect x="{x}" y="{y}" '
+            f'<defs><clipPath id="{clip_id}"><rect x="{x}" y="{y}" '
             f'width="{art}" height="{art}" rx="12" /></clipPath></defs>'
-            f'<image href="{largeUri}" x="{x}" y="{y}" width="{art}" '
+            f'<image href="{large_uri}" x="{x}" y="{y}" width="{art}" '
             f'height="{art}" preserveAspectRatio="xMidYMid slice" '
-            f'clip-path="url(#{clipId})" />'
+            f'clip-path="url(#{clip_id})" />'
         )
     else:
         parts.append(
             f'<rect x="{x}" y="{y}" width="{art}" height="{art}" rx="12" '
-            f'fill="{accentColor}" opacity="0.25" />'
+            f'fill="{accent_color}" opacity="0.25" />'
         )
 
-    if smallUri:
+    if small_uri:
         badge = int(art * 0.38)
         bx, by = x + art - badge, y + art - badge
         cx, cy = bx + badge // 2, by + badge // 2
         r = badge // 2
         parts.append(
-            f'<defs><clipPath id="{clipId}Small">'
+            f'<defs><clipPath id="{clip_id}Small">'
             f'<circle cx="{cx}" cy="{cy}" r="{r}" /></clipPath></defs>'
-            f'<circle cx="{cx}" cy="{cy}" r="{r + 3}" fill="{ringColor}" />'
-            f'<image href="{smallUri}" x="{bx}" y="{by}" '
+            f'<circle cx="{cx}" cy="{cy}" r="{r + 3}" fill="{ring_color}" />'
+            f'<image href="{small_uri}" x="{bx}" y="{by}" '
             f'width="{badge}" height="{badge}" '
             f'preserveAspectRatio="xMidYMid slice" '
-            f'clip-path="url(#{clipId}Small)" />'
+            f'clip-path="url(#{clip_id}Small)" />'
         )
 
-    textX = x + art + 16                     # already derives from art ✓
-    lineY = y + 24
-    parts.append(buildText(x=textX, y=lineY, content=name,
-                           fill=textColor, size=24, weight="700"))
-    lineY += 28
+    text_x = x + art + 16
+    line_y = y + 24
+
+    parts.append(
+        build_text(
+            x=text_x,
+            y=line_y,
+            content=name,
+            fill=text_color,
+            size=24,
+            weight="700"
+        )
+    )
+
+    line_y += 28
 
     if details:
-        parts.append(buildText(x=textX, y=lineY, content=details,
-                               fill=subTextColor, size=20, weight="400"))
-        lineY += 28
+        parts.append(
+            build_text(
+                x=text_x,
+                y=line_y,
+                content=details,
+                fill=sub_text_color,
+                size=20,
+                weight="400"
+            )
+        )
+
+        line_y += 28
 
     if start is not None:
-        parts.append(buildGamepadIcon(textX, lineY - 12, color=accentColor, size=15))
-        parts.append(buildAnimatedTimer(
-            x=textX + 20, y=lineY, start=start,
-            color=accentColor, size=20, weight="600",
-        ))
+        parts.append(
+            build_gamepad_icon(
+                text_x,
+                line_y - 12,
+                color=accent_color,
+                size=15
+            )
+        )
+
+        parts.append(
+            build_animated_timer(
+                x=text_x + 20,
+                y=line_y,
+                start=start,
+                color=accent_color,
+                size=20,
+                weight="600",
+            )
+        )
 
     return "".join(parts)

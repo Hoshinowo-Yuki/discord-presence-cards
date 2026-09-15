@@ -46,10 +46,10 @@ _PRESENCE_UPDATE = "PRESENCE_UPDATE"
 _CUSTOM_ACTIVITY_TYPE = 4
 
 
-def extractCustomStatus(
+def extract_custom_status(
     member: Member,
-    rawText: Optional[str] = None,
-    hasRawPayload: bool = False,
+    raw_text: Optional[str] = None,
+    has_raw_payload: bool = False,
 ) -> tuple[Optional[str], Optional[str], Optional[str]]:
     """
     Extract the custom status from a Member object.
@@ -58,9 +58,9 @@ def extractCustomStatus(
     ----------
     member : discord.Member
         The member from which to extract the custom status.
-    rawText : Optional[str], optional
+    raw_text : Optional[str], optional
         The raw custom status text, if available. Defaults to None.
-    hasRawPayload : bool, optional
+    has_raw_payload : bool, optional
         Whether the raw payload was available. Defaults to False.
 
     Returns
@@ -70,7 +70,7 @@ def extractCustomStatus(
         or None if not available.
     """
 
-    # (text, emojiUnicode, emojiUrl)
+    # (text, emoji_unicode, emoji_url)
     # CustomActivity is orthogonal to rich activities 
     # A user can have a game AND a custom status simultaneously,
     # so we scan activities directly rather than reusing the ranked pick.
@@ -78,7 +78,7 @@ def extractCustomStatus(
     for act in member.activities:
         if isinstance(act, CustomActivity):
             emoji = act.emoji
-            text = rawText if hasRawPayload else (act.state or "")
+            text = raw_text if has_raw_payload else (act.state or "")
 
             if emoji is None:
                 return text, None, None
@@ -112,7 +112,7 @@ class RawCustomStatusTracker:
     """
 
     def __init__(self) -> None:
-        self._rawText: dict[int, Optional[str]] = {}
+        self._raw_text: dict[int, Optional[str]] = {}
 
 
     def ingest(self, msg: str) -> None:
@@ -138,19 +138,19 @@ class RawCustomStatusTracker:
         # Extract the raw custom-status text from the payload and store it in `_rawText`
         data = payload.get("d", {})
 
-        customActivities = [
+        custom_activities = [
             activity
             for activity in data.get("activities", [])
             if activity.get("type") == _CUSTOM_ACTIVITY_TYPE
         ]
 
-        userId = int(data.get("user", {}).get("id", 0))
+        user_id = int(data.get("user", {}).get("id", 0))
 
-        if customActivities:
-            self._rawText[userId] = customActivities[0].get("state")
+        if custom_activities:
+            self._raw_text[user_id] = custom_activities[0].get("state")
 
-        elif userId:
-            self._rawText[userId] = None
+        elif user_id:
+            self._raw_text[user_id] = None
 
 
     def resolve(
@@ -171,9 +171,9 @@ class RawCustomStatusTracker:
             or None if not available.
         """
         
-        return extractCustomStatus(
+        return extract_custom_status(
             member,
-            rawText=self._rawText.get(member.id),
-            hasRawPayload=member.id in self._rawText,
+            raw_text=self._raw_text.get(member.id),
+            has_raw_payload=member.id in self._raw_text,
         )
 

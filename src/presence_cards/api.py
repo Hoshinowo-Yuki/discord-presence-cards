@@ -29,59 +29,59 @@ from typing import Optional
 from fastapi import APIRouter, Query, Request, Response
 
 from .store import store
-from .render import renderDefault, renderProfile
-from .helpers.enrich import enrichPresence
-from .helpers.responses import notFoundCard, svgResponse
-from .helpers.theme_resolver import resolveThemeParam
+from .render import render_default, render_profile
+from .helpers.enrich import enrich_presence
+from .helpers.responses import not_found_card, svg_response
+from .helpers.theme_resolver import resolve_theme_param
 
 router = APIRouter()
 
 
-@router.get("/profile/{userId}")
-async def profileCard(
-    userId: int,
+@router.get("/profile/{user_id}")
+async def profile_card(
+    user_id: int,
     request: Request,
     theme: str = Query("dark"),
     color: Optional[str] = Query(None),
     width: int = Query(500),
 ):
-    presence = store.getPresence(userId)
+    presence = store.get_presence(user_id)
     if presence is None:
-        return notFoundCard()
+        return not_found_card()
 
-    await enrichPresence(presence, userId)
+    await enrich_presence(presence, user_id)
 
     try:
-        resolved = resolveThemeParam(
-            theme=theme, color=color, accentColor=presence.accentColor
+        resolved = resolve_theme_param(
+            theme=theme, color=color, accent_color=presence.accent_color
         )
     except ValueError:
         return Response("bad color param", status_code=400)
 
-    svg = await renderProfile(
-        presence, resolved, request.app.state.httpClient, width=width
+    svg = await render_profile(
+        presence, resolved, request.app.state.http_client, width=width
     )
-    return svgResponse(svg)
+    return svg_response(svg)
 
 
-@router.get("/presence/{userId}")
-async def presenceCard(
-    userId: int,
+@router.get("/presence/{user_id}")
+async def presence_card(
+    user_id: int,
     request: Request,
     theme: str = Query("dark"),
     color: Optional[str] = Query(None),
-    hideSpotify: bool = Query(False),
+    hide_spotify: bool = Query(False, alias="hideSpotify"),
 ):
-    presence = store.getPresence(userId)
+    presence = store.get_presence(user_id)
     if presence is None:
-        return notFoundCard()
+        return not_found_card()
 
     try:
-        resolvedTheme = resolveThemeParam(theme=theme, color=color, accentColor=None)
+        resolved_theme = resolve_theme_param(theme=theme, color=color, accent_color=None)
     except ValueError:
         return Response("bad color param", status_code=400)
 
-    svg = await renderDefault(
-        presence, resolvedTheme, request.app.state.httpClient, hideSpotify=hideSpotify
+    svg = await render_default(
+        presence, resolved_theme, request.app.state.http_client, hide_spotify=hide_spotify
     )
-    return svgResponse(svg)
+    return svg_response(svg)

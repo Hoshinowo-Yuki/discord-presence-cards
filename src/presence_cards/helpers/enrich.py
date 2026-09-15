@@ -29,9 +29,9 @@ import discord
 from ..bot import bot
 from ..store import Presence
 
-_userCache: dict[int, discord.User] = {}
+_user_cache: dict[int, discord.User] = {}
 
-async def cachedFetchUser(userId: int) -> Optional[discord.User]:
+async def cached_fetch_user(user_id: int) -> Optional[discord.User]:
     """
     This function is a [coroutine](https://docs.python.org/3/library/asyncio-task.html#coroutine).
 
@@ -39,7 +39,7 @@ async def cachedFetchUser(userId: int) -> Optional[discord.User]:
 
     Parameters
     ----------
-    userId : int
+    user_id : int
         The Discord user ID to fetch.
 
     Returns
@@ -48,17 +48,17 @@ async def cachedFetchUser(userId: int) -> Optional[discord.User]:
         The `discord.User` object if found, otherwise `None`.
     """
 
-    if userId not in _userCache:
+    if user_id not in _user_cache:
         try:
-            _userCache[userId] = await bot.fetch_user(userId)
+            _user_cache[user_id] = await bot.fetch_user(user_id)
 
         except discord.HTTPException:
             return None
 
-    return _userCache[userId]
+    return _user_cache[user_id]
 
 
-async def enrichPresence(presence: Presence, userId: int) -> None:
+async def enrich_presence(presence: Presence, user_id: int) -> None:
     """
     This function is a [coroutine](https://docs.python.org/3/library/asyncio-task.html#coroutine).
 
@@ -68,7 +68,7 @@ async def enrichPresence(presence: Presence, userId: int) -> None:
     ----------
     presence : Presence
         The `Presence` object to enrich.
-    userId : int
+    user_id : int
         The Discord user ID associated with the presence.
 
     Returns
@@ -76,7 +76,7 @@ async def enrichPresence(presence: Presence, userId: int) -> None:
     None
     """
 
-    user = await cachedFetchUser(userId)
+    user = await cached_fetch_user(user_id)
 
     if user is None:
         return
@@ -84,11 +84,11 @@ async def enrichPresence(presence: Presence, userId: int) -> None:
     banner = user.banner
 
     if banner:
-        presence.bannerUrl = str(
+        presence.banner_url = str(
             banner.replace(
                 format="gif" if banner.is_animated() else "png",
                 size=1024,
             ).url
         )
 
-    presence.accentColor = user.accent_color.value if user.accent_color else None
+    presence.accent_color = user.accent_color.value if user.accent_color else None

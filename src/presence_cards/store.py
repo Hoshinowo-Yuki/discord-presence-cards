@@ -22,6 +22,7 @@
 #
 #
 # SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: MIT
 
 """
 A module for storing and managing user presence information.
@@ -42,45 +43,45 @@ class Presence:
 
     Attributes
     ----------
-    userId : int
+    user_id : int
         The Discord user ID.
-    displayName : str
+    display_name : str
         The display name of the user.
-    avatarUrl : str
+    avatar_url : str
         The URL of the user's avatar.
     status : str
         The user's current status (e.g., "online", "idle", "dnd", "offline").
-    activityName : str, optional
+    activity_name : str, optional
         The name of the user's current activity, if any.
-    serverTagText : str, optional
+    server_tag_text : str, optional
         The text of the server tag, if any.
-    serverTagBadgeUrl : str, optional
+    server_tag_badge_url : str, optional
         The URL of the server tag badge, if any.
     username : str, optional
         The user's username (handle) under the display name.
-    bannerUrl : str, optional
+    banner_url : str, optional
         The URL of the user's banner image, if any.
-    avatarDecorationUrl : str, optional
+    avatar_decoration_url : str, optional
         The URL of the user's avatar decoration, if any.
-    badgeUris : list of str
+    badge_uris : list of str
         A list of URIs for the user's badges.
-    activityDetails : str, optional
+    activity_details : str, optional
         The details of the user's current activity, if any.
-    activityState : str, optional
+    activity_state : str, optional
         The state of the user's current activity, if any.
-    activityLargeImageUrl : str, optional
+    activity_large_image_url : str, optional
         The URL of the large image for the user's current activity, if any.
-    activitySmallImageUrl : str, optional
+    activity_small_image_url : str, optional
         The URL of the small image for the user's current activity, if any.
-    activityStart : datetime, optional
+    activity_start : datetime, optional
         The start time of the user's current activity, if any.
-    customStatusText : str, optional
+    custom_status_text : str, optional
         The text of the user's custom status, if any.
-    customStatusEmojiUnicode : str, optional
+    custom_status_emoji_unicode : str, optional
         The Unicode representation of the emoji in the user's custom status, if any.
-    customStatusEmojiUrl : str, optional
+    custom_status_emoji_url : str, optional
         The URL of the emoji in the user's custom status, if any.
-    accentColor : int, optional
+    accent_color : int, optional
         The accent color of the user's profile, if any.
 
     Notes
@@ -88,34 +89,34 @@ class Presence:
     This dataclass is flattened intentionally, making it easier to serialize and store in a database or cache.
     """
 
-    userId: int
-    displayName: str
-    avatarUrl: str
+    user_id: int
+    display_name: str
+    avatar_url: str
     status: str  # "online" | "idle" | "dnd" | "offline"
-    activityName: Optional[str] = None
+    activity_name: Optional[str] = None
 
-    serverTagText: Optional[str] = None      # the pill text, e.g. "GG"
-    serverTagBadgeUrl: Optional[str] = None  # CDN url for the emblem, or None
+    server_tag_text: Optional[str] = None      # the pill text, e.g. "GG"
+    server_tag_badge_url: Optional[str] = None  # CDN url for the emblem, or None
 
     # --- profile-card fields (populate these in bot.py) ---
     username: Optional[str] = None            # @handle under the display name
-    bannerUrl: Optional[str] = None           # animated .gif ok, needs base64'd
-    avatarDecorationUrl: Optional[str] = None # APNG preset, needs base64'd
-    badgeUris: list[str] = field(default_factory=list)  # from resolveBadges(user.public_flags)
+    banner_url: Optional[str] = None           # animated .gif ok, needs base64'd
+    avatar_decoration_url: Optional[str] = None # APNG preset, needs base64'd
+    badge_uris: list[str] = field(default_factory=list)  # from resolve_badges(user.public_flags)
 
     # --- activity row (also populate in bot.py, from the dpy Activity) ---
-    activityDetails: Optional[str] = None       # first text line under name
-    activityState: Optional[str] = None         # second text line
-    activityLargeImageUrl: Optional[str] = None # from Activity.large_image_url
-    activitySmallImageUrl: Optional[str] = None # from Activity.small_image_url
-    activityStart: Optional[datetime] = None    # from Activity.start (tz-aware)
+    activity_details: Optional[str] = None       # first text line under name
+    activity_state: Optional[str] = None         # second text line
+    activity_large_image_url: Optional[str] = None # from Activity.large_image_url
+    activity_small_image_url: Optional[str] = None # from Activity.small_image_url
+    activity_start: Optional[datetime] = None    # from Activity.start (tz-aware)
 
     # --- custom status (also populate in bot.py, from the dpy CustomActivity) ---
-    customStatusText: Optional[str] = None
-    customStatusEmojiUnicode: Optional[str] = None
-    customStatusEmojiUrl: Optional[str] = None
+    custom_status_text: Optional[str] = None
+    custom_status_emoji_unicode: Optional[str] = None
+    custom_status_emoji_url: Optional[str] = None
 
-    accentColor: Optional[int] = None    # user.accent_color.value or None
+    accent_color: Optional[int] = None    # user.accent_color.value or None
 
 
 class PresenceStore:
@@ -131,9 +132,9 @@ class PresenceStore:
     
     Methods
     -------
-    updatePresence(presence)
+    update_presence(presence)
         Update the presence information for a user.
-    getPresence(userId)
+    get_presence(user_id)
         Retrieve the presence information for a user by their ID.
 
     Notes
@@ -151,7 +152,8 @@ class PresenceStore:
         self._presences: dict[int, Presence] = {}
 
 
-    def updatePresence(self, presence: Presence) -> None:
+
+    def update_presence(self, presence: Presence) -> None:
         """
         Updates the presence information for a user in the store.
 
@@ -165,16 +167,17 @@ class PresenceStore:
         None
         """
 
-        self._presences[presence.userId] = presence
+        self._presences[presence.user_id] = presence
 
 
-    def getPresence(self, userId: int) -> Optional[Presence]:
+
+    def get_presence(self, user_id: int) -> Optional[Presence]:
         """
         Retrieves the presence information for a user by their Discord user ID.
 
         Parameters
         ----------
-        userId : int
+        user_id : int
             The Discord user ID of the user whose presence information is to be retrieved.
         
         Returns
@@ -183,7 +186,7 @@ class PresenceStore:
             An instance of the `Presence` dataclass containing the user's presence information,
             or `None` if no presence information is found for the given user ID.
         """
-        return self._presences.get(userId)
+        return self._presences.get(user_id)
 
 
 # Single shared instance, imported by both the bot and the API.

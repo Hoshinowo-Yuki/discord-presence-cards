@@ -25,22 +25,22 @@ DEALINGS IN THE SOFTWARE.
 # SPDX-License-Identifier: MIT
 
 from typing import Optional
-from .status import buildStatusIndicator
+from .status import build_status_indicator
 
 
-def buildAvatarCircle(
-    avatarUri: str,
+def build_avatar_circle(
+    avatar_uri: str,
     cx: int,
     cy: int,
     radius: int,
     status: str,
-    backgroundColor: str,
+    bg_color: str,
     *,
-    ringColor: Optional[str] = None,
-    decoUri: Optional[str] = None,
-    decoScale: float = 1.18,
-    ringWidth: int = 0,
-    clipId: str = "avatarClip",
+    ring_color: Optional[str] = None,
+    decoration_uri: Optional[str] = None,
+    decoration_scale: float = 1.18,
+    ring_width: int = 0,
+    clip_id: str = "avatarClip",
 ) -> str:
     """
     Build a circular avatar with a Discord-accurate status indicator.
@@ -52,7 +52,7 @@ def buildAvatarCircle(
 
     Parameters
     ----------
-    avatarUri : str
+    avatar_uri : str
         The URI for the avatar image.
     cx : int
         The x-coordinate of the avatar circle's center.
@@ -63,26 +63,26 @@ def buildAvatarCircle(
     status : str
         The user's status, passed through to the status indicator
         (e.g. "online", "idle", "dnd", "offline").
-    backgroundColor : str
+    bg_color : str
         The card background color. Passed to the status indicator for its
         gap and punch-out negative space, and used as the default fill for
         the separator ring (see `ringColor`).
-    ringColor : Optional[str], optional
+    ring_color : Optional[str], optional
         The fill color for the separator ring drawn behind the avatar (only
-        when `ringWidth` is set). When None, falls back to
-        `backgroundColor`, which is the common case where the ring is meant
+        when `ring_width` is set). When None, falls back to
+        `background_color`, which is the common case where the ring is meant
         to blend into the card. Set this explicitly only to give the ring a
         distinct color (e.g. an accent). Defaults to None.
-    decoUri : Optional[str], optional
+    decoration_uri : Optional[str], optional
         The URI for an avatar decoration (APNG preset) overlaid on the
         avatar. When absent, no decoration is drawn. Defaults to None.
-    decoScale : float, optional
+    decoration_scale : float, optional
         The size of the decoration relative to the avatar diameter
         (default is 1.18).
-    ringWidth : int, optional
+    ring_width : int, optional
         The width in pixels of the separator ring drawn behind the avatar.
         When 0, no ring is drawn (default is 0).
-    clipId : str, optional
+    clip_id : str, optional
         The id for the avatar's SVG clip path (default is "avatarClip").
 
     Returns
@@ -97,42 +97,50 @@ def buildAvatarCircle(
     y = cy - radius
 
     parts = [
-        f'<defs><clipPath id="{clipId}">'
+        f'<defs><clipPath id="{clip_id}">'
         f'<circle cx="{cx}" cy="{cy}" r="{radius}" />'
         f'</clipPath></defs>'
     ]
 
-    if ringWidth:
-        separatorColor = ringColor if ringColor is not None else backgroundColor
+    if ring_width:
+        separator_color = ring_color if ring_color is not None else bg_color
         parts.append(
-            f'<circle cx="{cx}" cy="{cy}" r="{radius + ringWidth}" fill="{separatorColor}" />'
+            f'<circle cx="{cx}" cy="{cy}" r="{radius + ring_width}" fill="{separator_color}" />'
         )
 
     parts.append(
-        f'<image href="{avatarUri}" x="{x}" y="{y}" width="{size}" height="{size}" '
-        f'clip-path="url(#{clipId})" />'
+        f'<image href="{avatar_uri}" x="{x}" y="{y}" width="{size}" height="{size}" '
+        f'clip-path="url(#{clip_id})" />'
     )
 
-    if decoUri:
+    if decoration_uri:
         # Discord avatar decorations are designed to overflow the avatar circle 
-        # (decoScale > 1). Clipping to the avatar would defeat decoScale
+        # (decoration_scale > 1). Clipping to the avatar would defeat decoration_scale
         # by cropping exactly the overflow it adds.
         #
         # This behavior is intentional.
-        dSize = int(size * decoScale)
-        dx = cx - dSize // 2
-        dy = cy - dSize // 2
+        d_size = int(size * decoration_scale)
+        dx = cx - d_size // 2
+        dy = cy - d_size // 2
+
         parts.append(
-            f'<image href="{decoUri}" x="{dx}" y="{dy}" '
-            f'width="{dSize}" height="{dSize}" />'
+            f'<image href="{decoration_uri}" x="{dx}" y="{dy}" '
+            f'width="{d_size}" height="{d_size}" />'
         )
 
     # Indicator sits at the lower-right edge of the avatar circle.
-    dotCx = cx + int(radius * 0.72)
-    dotCy = cy + int(radius * 0.72)
-    dotRadius = max(6, int(radius * 0.2))
+    dot_cx = cx + int(radius * 0.72)
+    dot_cy = cy + int(radius * 0.72)
+    dot_radius = max(6, int(radius * 0.2))
+
     parts.append(
-        buildStatusIndicator(dotCx, dotCy, dotRadius, status, backgroundColor)
+        build_status_indicator(
+            dot_cx,
+            dot_cy,
+            dot_radius,
+            status,
+            bg_color
+        )
     )
 
     return "".join(parts)

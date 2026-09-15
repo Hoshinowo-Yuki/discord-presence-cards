@@ -27,12 +27,12 @@ DEALINGS IN THE SOFTWARE.
 import discord
 from typing import Optional
 from discord import Client, Member, CustomActivity
-from .rawCustomStatus import RawCustomStatusTracker
-from .helpers.badges import resolveBadges
+from .raw_custom_status import RawCustomStatusTracker
+from .helpers.badges import resolve_badges
 from .store import Presence, store
 
 
-def buildIntents() -> discord.Intents:
+def build_intents() -> discord.Intents:
     """Build a discord.Intents object with the necessary flags for presence tracking."""
     intents = discord.Intents.default()
     intents.presences = True
@@ -41,7 +41,7 @@ def buildIntents() -> discord.Intents:
     return intents
 
 
-def extractServerTag(member: Member) -> tuple[Optional[str], Optional[str]]:
+def extract_server_tag(member: Member) -> tuple[Optional[str], Optional[str]]:
     """
     Extract the server tag text and badge URL from a Member's primary guild identity.
 
@@ -57,7 +57,7 @@ def extractServerTag(member: Member) -> tuple[Optional[str], Optional[str]]:
         or None if not available.
     """
 
-    # Pull (tagText, badgeUrl) off a member's primary guild identity.
+    # Pull (tag_text, badge_url) off a member's primary guild identity.
     pg = getattr(member, "primary_guild", None)
     if pg is None or not pg.tag:
         return None, None
@@ -65,11 +65,11 @@ def extractServerTag(member: Member) -> tuple[Optional[str], Optional[str]]:
     if pg.identity_enabled is False:   # hide only on explicit False; None still shows
         return None, None
 
-    badgeUrl = pg.badge.url if pg.badge else None
-    return pg.tag, badgeUrl
+    badge_url = pg.badge.url if pg.badge else None
+    return pg.tag, badge_url
 
 
-def extractActivity(member: Member):
+def extract_activity(member: Member):
     """
     Extract the most relevant activity from a Member's activities, ignoring CustomActivity.
 
@@ -87,7 +87,7 @@ def extractActivity(member: Member):
 
     empty = {
         "name": None, "details": None, "state": None,
-        "largeImageUrl": None, "smallImageUrl": None, "start": None,
+        "large_image_url": None, "small_image_url": None, "start": None,
     }
 
     # CustomActivity is the status bubble, not a real activity for the box.
@@ -111,8 +111,8 @@ def extractActivity(member: Member):
         "name": act.name,
         "details": getattr(act, "details", None),
         "state": getattr(act, "state", None),
-        "largeImageUrl": getattr(act, "large_image_url", None),
-        "smallImageUrl": getattr(act, "small_image_url", None),
+        "large_image_url": getattr(act, "large_image_url", None),
+        "small_image_url": getattr(act, "small_image_url", None),
         "start": getattr(act, "start", None),
     }
 
@@ -123,7 +123,7 @@ class PresenceBot(Client):
     
     Attributes
     ----------
-    customStatus : RawCustomStatusTracker
+    custom_status : RawCustomStatusTracker
         A tracker for raw custom-status text, populated from the gateway before dpy normalizes it
 
     Methods
@@ -137,7 +137,7 @@ class PresenceBot(Client):
     on_presence_update(before, after) -> None
         Capture the updated presence of a member.
 
-    capturePresence(member) -> None
+    capture_presence(member) -> None
         Extract relevant presence fields from a Member and update the store.
     
     Notes
@@ -152,7 +152,7 @@ class PresenceBot(Client):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.customStatus = RawCustomStatusTracker()
+        self.custom_status = RawCustomStatusTracker()
 
 
     async def on_socket_raw_receive(self, msg: str) -> None:
@@ -176,7 +176,7 @@ class PresenceBot(Client):
         will extract any raw custom-status text and cache it for later use.
         """
 
-        self.customStatus.ingest(msg)
+        self.custom_status.ingest(msg)
 
 
     async def on_ready(self):
@@ -193,7 +193,7 @@ class PresenceBot(Client):
         # Prime the store with whatever presences we can already see.
         for guild in self.guilds:
             for member in guild.members:
-                self.capturePresence(member)
+                self.capture_presence(member)
         print(f"Logged in as {self.user} — cached {len(store._presences)} presences.")
 
 
@@ -217,10 +217,10 @@ class PresenceBot(Client):
         None
         """
 
-        self.capturePresence(after)
+        self.capture_presence(after)
 
 
-    def capturePresence(self, member: Member) -> None:
+    def capture_presence(self, member: Member) -> None:
         """
         Extract relevant presence fields from a Member and update the store.
 
@@ -234,23 +234,23 @@ class PresenceBot(Client):
         None
         """
 
-        act = extractActivity(member)
+        act = extract_activity(member)
 
         avatar = member.display_avatar
-        tagText, badgeUrl = extractServerTag(member)
-        statusText, statusEmojiUni, statusEmojiUrl = self.customStatus.resolve(member)
+        tag_text, badge_url = extract_server_tag(member)
+        status_text, status_emoji_uni, status_emoji_url = self.custom_status.resolve(member)
 
-        decoUrl = None
+        deco_url = None
         deco = getattr(member, "avatar_decoration", None)
         if deco is not None:
-            decoUrl = str(deco.url)
+            deco_url = str(deco.url)
 
-        store.updatePresence(
+        store.update_presence(
             Presence(
-                userId=member.id,
-                displayName=member.display_name,
+                user_id=member.id,
+                display_name=member.display_name,
                 username=member.name,
-                avatarUrl = str(
+                avatar_url = str(
                     avatar.replace(
                         format="gif" if avatar.is_animated() else "png",
                         size=128
@@ -258,20 +258,20 @@ class PresenceBot(Client):
                     .url
                 ),
                 status=str(member.status),
-                activityName=act["name"],
-                serverTagText=tagText,
-                serverTagBadgeUrl=badgeUrl,
-                avatarDecorationUrl=decoUrl,
-                badgeUris=resolveBadges(member.public_flags),
-                activityDetails=act["details"],
-                activityState=act["state"],
-                customStatusText=statusText,
-                customStatusEmojiUnicode=statusEmojiUni,
-                customStatusEmojiUrl=statusEmojiUrl,
-                activityLargeImageUrl=act["largeImageUrl"],
-                activitySmallImageUrl=act["smallImageUrl"],
-                activityStart=act["start"],
+                activity_name=act["name"],
+                server_tag_text=tag_text,
+                server_tag_badge_url=badge_url,
+                avatar_decoration_url=deco_url,
+                badge_uris=resolve_badges(member.public_flags),
+                activity_details=act["details"],
+                activity_state=act["state"],
+                custom_status_text=status_text,
+                custom_status_emoji_unicode=status_emoji_uni,
+                custom_status_emoji_url=status_emoji_url,
+                activity_large_image_url=act["large_image_url"],
+                activity_small_image_url=act["small_image_url"],
+                activity_start=act["start"],
             )
         )
 
-bot = PresenceBot(intents=buildIntents())
+bot = PresenceBot(intents=build_intents())

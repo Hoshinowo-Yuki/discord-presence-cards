@@ -15,14 +15,14 @@ TOKEN = os.environ["DISCORD_TOKEN"]
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for FastAPI application."""
-    app.state.httpClient = httpx.AsyncClient()
-    botTask = asyncio.create_task(bot.start(TOKEN))
+    app.state.http_client = httpx.AsyncClient()
+    bot_task = asyncio.create_task(bot.start(TOKEN))
     try:
         yield
     finally:
         await bot.close()
-        await app.state.httpClient.aclose()
-        botTask.cancel()
+        await app.state.http_client.aclose()
+        bot_task.cancel()
 
 
 app = FastAPI(lifespan=lifespan)

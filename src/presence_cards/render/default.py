@@ -33,14 +33,14 @@ import secrets
 import httpx
 from ..store import Presence
 from ..themes import Theme
-from ..helpers.avatar import buildAvatarCircle
-from ..helpers.pill import buildServerTagPill
+from ..helpers.avatar import build_avatar_circle
+from ..helpers.pill import build_server_tag_pill
 from ..helpers.primitives import (
-    buildText,
-    estimateTextWidth,
-    fetchDataUri,
-    buildCardBackground,
-    buildSvgRoot,
+    build_text,
+    estimate_text_width,
+    fetch_data_uri,
+    build_card_background,
+    build_svg_root,
 )
 
 CONTENT_LEFT = 120   # x where text/pill start, just right of the avatar
@@ -49,11 +49,11 @@ CARD_HEIGHT = 120
 RIGHT_PAD = 20
 
 
-async def renderDefault(
+async def render_default(
     presence: Presence,
     theme: Theme,
-    httpClient: httpx.AsyncClient,
-    hideSpotify: bool = False,
+    http_client: httpx.AsyncClient,
+    hide_spotify: bool = False,
 ) -> str:
     """
     This function is a [coroutine](https://docs.python.org/3/library/asyncio-task.html#coroutine).
@@ -74,9 +74,9 @@ async def renderDefault(
         The presence record to render.
     theme : Theme
         The resolved theme supplying colors and any background gradient.
-    httpClient : httpx.AsyncClient
+    http_client : httpx.AsyncClient
         The async client used to inline the avatar and badge images.
-    hideSpotify : bool, optional
+    hide_spotify : bool, optional
         When True, the activity line is suppressed (default is False).
 
     Returns
@@ -89,65 +89,69 @@ async def renderDefault(
     # digit — XML ids must begin with a letter/underscore.
     uid = secrets.token_hex(4)
 
-    avatarUri = await fetchDataUri(presence.avatarUrl, httpClient)
+    avatar_uri = await fetch_data_uri(presence.avatar_url, http_client)
 
-    cardDefs, cardFill = buildCardBackground(theme, defsId=f"cardBg-{uid}")
+    card_defs, card_fill = build_card_background(theme, defs_id=f"cardBg-{uid}")
 
-    avatarMarkup = buildAvatarCircle(
-        avatarUri=avatarUri,
+    avatar_markup = build_avatar_circle(
+        avatar_uri=avatar_uri,
         cx=60,
         cy=60,
         radius=36,
         status=presence.status,
-        backgroundColor=theme["background"],
-        clipId=f"avatarClip-{uid}",
+        bg_color=theme["background"],
+        clip_id=f"avatarClip-{uid}",
     )
 
-    nameSize = 20
-    nameWidth = estimateTextWidth(presence.displayName, nameSize)
-    nameMarkup = buildText(
-        x=CONTENT_LEFT, y=55, content=presence.displayName,
-        fill=theme["text"], size=nameSize, weight="600",
+    name_size = 20
+    name_width = estimate_text_width(presence.display_name, name_size)
+    name_markup = build_text(
+        x=CONTENT_LEFT, y=55, content=presence.display_name,
+        fill=theme["text"], size=name_size, weight="600",
     )
-    rightEdge = CONTENT_LEFT + nameWidth
+    right_edge = CONTENT_LEFT + name_width
 
-    tagMarkup = ""
-    if presence.serverTagText:
-        pillX = CONTENT_LEFT + nameWidth + 12
-        badgeUri = None
-        if presence.serverTagBadgeUrl:
-            badgeUri = await fetchDataUri(presence.serverTagBadgeUrl, httpClient)
+    tag_markup = ""
+    if presence.server_tag_text:
+        pill_x = CONTENT_LEFT + name_width + 12
+        badge_uri = None
+        if presence.server_tag_badge_url:
+            badge_uri = await fetch_data_uri(presence.server_tag_badge_url, http_client)
 
-        tagMarkup, pillWidth = buildServerTagPill(
-            x=pillX, cy=48,
-            tagText=presence.serverTagText,
-            badgeUri=badgeUri,
-            textColor=theme["text"],
-            pillColor=theme["tagPill"],
+        tag_markup, pill_width = build_server_tag_pill(
+            x=pill_x,
+            cy=48,
+            tag_text=presence.server_tag_text,
+            badge_uri=badge_uri,
+            text_color=theme["text"],
+            pill_color=theme["tag_pill"],
         )
-        rightEdge = pillX + pillWidth
+        right_edge = pill_x + pill_width
 
-    activityMarkup = ""
-    if presence.activityName and not hideSpotify:
-        activitySize = 14
-        activityMarkup = buildText(
-            x=CONTENT_LEFT, y=78, content=presence.activityName,
-            fill=theme["subtext"], size=activitySize,
+    activity_markup = ""
+    if presence.activity_name and not hide_spotify:
+        activity_size = 14
+        activity_markup = build_text(
+            x=CONTENT_LEFT,
+            y=78,
+            content=presence.activity_name,
+            fill=theme["subtext"],
+            size=activity_size,
         )
-        rightEdge = max(
-            rightEdge,
-            CONTENT_LEFT + estimateTextWidth(presence.activityName, activitySize),
+        right_edge = max(
+            right_edge,
+            CONTENT_LEFT + estimate_text_width(presence.activity_name, activity_size),
         )
 
-    cardWidth = max(CARD_MIN_WIDTH, int(rightEdge) + RIGHT_PAD)
+    card_width = max(CARD_MIN_WIDTH, int(right_edge) + RIGHT_PAD)
 
-    return buildSvgRoot(
-        width=cardWidth,
+    return build_svg_root(
+        width=card_width,
         height=CARD_HEIGHT,
-        viewBox=f"0 0 {cardWidth} {CARD_HEIGHT}",
+        view_box=f"0 0 {card_width} {CARD_HEIGHT}",
         body=(
-            f'{cardDefs}'
-            f'<rect width="{cardWidth}" height="{CARD_HEIGHT}" rx="12" fill="{cardFill}" />'
-            f'{avatarMarkup}{nameMarkup}{tagMarkup}{activityMarkup}'
+            f'{card_defs}'
+            f'<rect width="{card_width}" height="{CARD_HEIGHT}" rx="12" fill="{card_fill}" />'
+            f'{avatar_markup}{name_markup}{tag_markup}{activity_markup}'
         ),
     )

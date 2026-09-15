@@ -62,7 +62,7 @@ BADGE_MAP: dict[UserFlags, str] = {
 
 
 @lru_cache(maxsize=None)
-def _loadBadgeUri(filename: str) -> str:
+def _load_badge_uri(filename: str) -> str:
     """
     Read a badge SVG from disk and return it as a base64 data URI. 
 
@@ -82,7 +82,7 @@ def _loadBadgeUri(filename: str) -> str:
     return f"data:image/svg+xml;base64,{b64}"
 
 
-def resolveBadges(flags) -> list[str]:
+def resolve_badges(flags) -> list[str]:
     """
     Return a list of badge data URIs for the given Discord public_flags, in render order.
 
@@ -99,7 +99,7 @@ def resolveBadges(flags) -> list[str]:
 
     present = set(flags.all())
     return [
-        _loadBadgeUri(fname)
+        _load_badge_uri(fname)
         for flag, fname in BADGE_MAP.items()
         if flag in present
     ]

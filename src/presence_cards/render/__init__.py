@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 """Public rendering API. Import renderers from here, not the submodules."""
 
-from .default import renderDefault
-from .profile import renderProfile
+from .default import render_default
+from .profile import render_profile
 
-__all__ = ["renderDefault", "renderProfile"]
+__all__ = ["render_default", "render_profile"]

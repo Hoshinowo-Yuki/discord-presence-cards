@@ -27,13 +27,13 @@ DEALINGS IN THE SOFTWARE.
 from typing import Optional
 from ..themes import (
     Theme,
-    resolveTheme,
+    resolve_theme,
     DEFAULT_THEME,
     TEXT_ON_DARK,
     TEXT_ON_LIGHT,
     ACCENT_GREEN,
 )
-from .color import luminance, shiftLightness, gradientFromColor
+from .color import luminance, shift_lightness, gradient_from_color
 
 
 # Luminance below this reads as a dark surface (light text, lightening shifts).
@@ -51,7 +51,7 @@ _EXTREME_LO = 0.15
 _EXTREME_HI = 0.85
 
 
-def themeFromGradient(top: str, bottom: str) -> Theme:
+def theme_from_gradient(top: str, bottom: str) -> Theme:
     """
     Build a theme from a two-stop gradient.
 
@@ -69,23 +69,23 @@ def themeFromGradient(top: str, bottom: str) -> Theme:
     Returns
     -------
     Theme
-        The derived theme, including a "bgGradient" (top, bottom) pair.
+        The derived theme, including a "bg_gradient" (top, bottom) pair.
     """
 
-    lighterStop = top if luminance(top) > luminance(bottom) else bottom
-    isDark = luminance(lighterStop) < _DARK_LUM_THRESHOLD
+    lighter_stop = top if luminance(top) > luminance(bottom) else bottom
+    is_dark = luminance(lighter_stop) < _DARK_LUM_THRESHOLD
 
     return {
         "background": bottom,                 # solid fallback
-        "bgGradient": (top, bottom),
-        "text":    TEXT_ON_DARK if isDark else TEXT_ON_LIGHT,
-        "subtext": shiftLightness(lighterStop, _SUBTEXT_SHIFT if isDark else -_SUBTEXT_SHIFT),
-        "tagPill": shiftLightness(bottom, _PILL_SHIFT if isDark else -_PILL_SHIFT),
+        "bg_gradient": (top, bottom),
+        "text":    TEXT_ON_DARK if is_dark else TEXT_ON_LIGHT,
+        "subtext": shift_lightness(lighter_stop, _SUBTEXT_SHIFT if is_dark else -_SUBTEXT_SHIFT),
+        "tag_pill": shift_lightness(bottom, _PILL_SHIFT if is_dark else -_PILL_SHIFT),
         "accent":  ACCENT_GREEN,
     }
 
 
-def themeFromAccentBg(accentColor: Optional[int]) -> Theme:
+def theme_from_accent_bg(accent_color: Optional[int]) -> Theme:
     """
     Build a theme from a Discord accent color, or fall back to the default.
 
@@ -96,52 +96,52 @@ def themeFromAccentBg(accentColor: Optional[int]) -> Theme:
 
     Parameters
     ----------
-    accentColor : Optional[int]
+    accent_color : Optional[int]
         The Discord accent color as a 24-bit integer, or None to use the
         default theme.
 
     Returns
     -------
     Theme
-        The derived theme, or the resolved default theme when `accentColor`
+        The derived theme, or the resolved default theme when `accent_color`
         is None.
     """
 
-    if accentColor is None:
-        return resolveTheme(DEFAULT_THEME)
+    if accent_color is None:
+        return resolve_theme(DEFAULT_THEME)
 
-    background = f"#{accentColor:06x}"
+    background = f"#{accent_color:06x}"
     lum = luminance(background)
-    isDark = lum < _DARK_LUM_THRESHOLD
-    isExtreme = lum > _EXTREME_HI or lum < _EXTREME_LO
-    pillShift = (_PILL_SHIFT_EXTREME if isDark else -_PILL_SHIFT_EXTREME) if isExtreme \
-        else (_PILL_SHIFT if isDark else -_PILL_SHIFT)
+    is_dark = lum < _DARK_LUM_THRESHOLD
+    is_extreme = lum > _EXTREME_HI or lum < _EXTREME_LO
+    pill_shift = (_PILL_SHIFT_EXTREME if is_dark else -_PILL_SHIFT_EXTREME) if is_extreme \
+        else (_PILL_SHIFT if is_dark else -_PILL_SHIFT)
 
     return {
         "background": background,
-        "text":    TEXT_ON_DARK if isDark else TEXT_ON_LIGHT,
-        "subtext": shiftLightness(background, _SUBTEXT_SHIFT if isDark else -_SUBTEXT_SHIFT),
-        "tagPill": shiftLightness(background, pillShift),
+        "text":    TEXT_ON_DARK if is_dark else TEXT_ON_LIGHT,
+        "subtext": shift_lightness(background, _SUBTEXT_SHIFT if is_dark else -_SUBTEXT_SHIFT),
+        "tag_pill": shift_lightness(background, pill_shift),
         "accent":  ACCENT_GREEN,
     }
 
 
-def resolveThemeParam(*, theme: str, color: Optional[str],
-                      accentColor: Optional[int]) -> Theme:
+def resolve_theme_param(*, theme: str, color: Optional[str],
+                      accent_color: Optional[int]) -> Theme:
     """
     Resolve the public theme parameters to a concrete Theme.
 
     Precedence is: an explicit `color` (gradient) wins, then `theme="accent"`
-    (derived from `accentColor`), then a named theme.
+    (derived from `accent_color`), then a named theme.
 
     Parameters
     ----------
     theme : str
-        The named theme, or "accent" to derive one from `accentColor`.
+        The named theme, or "accent" to derive one from `accent_color`.
     color : Optional[str]
         An explicit gradient source color. When given, it takes precedence
         over everything else.
-    accentColor : Optional[int]
+    accent_color : Optional[int]
         The Discord accent color, used only when `theme` is "accent".
 
     Returns
@@ -151,9 +151,9 @@ def resolveThemeParam(*, theme: str, color: Optional[str],
     """
 
     if color is not None:
-        return themeFromGradient(*gradientFromColor(color))
+        return theme_from_gradient(*gradient_from_color(color))
 
     if theme == "accent":
-        return themeFromAccentBg(accentColor)
+        return theme_from_accent_bg(accent_color)
 
-    return resolveTheme(theme)
+    return resolve_theme(theme)

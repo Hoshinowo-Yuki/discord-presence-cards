@@ -33,7 +33,7 @@ _NOT_FOUND_SVG = (
     "Presence not found</text></svg>"
 )
 
-def notFoundCard() -> Response:
+def not_found_card() -> Response:
     """Not found response for a presence card request."""
     return Response(
         content=_NOT_FOUND_SVG,
@@ -41,7 +41,7 @@ def notFoundCard() -> Response:
         status_code=404
     )
 
-def svgResponse(svg: str, status: int = 200) -> Response:
+def svg_response(svg: str, status: int = 200) -> Response:
     """Return an SVG response with the given status code."""
     return Response(
         content=svg,

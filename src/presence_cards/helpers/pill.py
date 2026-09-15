@@ -26,12 +26,17 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Optional
 from presence_cards.store import Presence
-from .primitives import FONT_STACK, buildText, escapeXml, estimateTextWidth
+from .primitives import (
+    FONT_STACK,
+    build_text,
+    escape_xml,
+    estimate_text_width,
+)
 from ..themes import Theme
 
 
-def _buildFlagBadges(
-    badgeUris: list[str],
+def _build_flag_badges(
+    badge_uris: list[str],
     size: int = 30,
     gap: int = 4
 ) -> str:
@@ -43,7 +48,7 @@ def _buildFlagBadges(
 
     Parameters
     ----------
-    badgeUris : list of str
+    badge_uris : list of str
         The data-URI SVGs for each flag badge. An empty list yields "".
     size : int, optional
         The width and height of each badge in pixels (default is 30).
@@ -53,15 +58,15 @@ def _buildFlagBadges(
     Returns
     -------
     str
-        The XHTML for the badge group, or "" when `badgeUris` is empty.
+        The XHTML for the badge group, or "" when `badge_uris` is empty.
     """
 
-    if not badgeUris:
+    if not badge_uris:
         return ""
 
     images = "".join(
         f'<img src="{uri}" width="{size}" height="{size}" style="display:block" />'
-        for uri in badgeUris
+        for uri in badge_uris
     )
 
     return (
@@ -70,13 +75,13 @@ def _buildFlagBadges(
     )
 
 
-def buildStatusPill(
+def build_status_pill(
     text: Optional[str],
-    emojiUnicode: Optional[str],
-    emojiUrl: Optional[str],
+    emoji_unicode: Optional[str],
+    emoji_url: Optional[str],
     theme: Theme,
-    emojiSize: int = 28,
-    maxHeight: int = 85,
+    emoji_size: int = 28,
+    max_height: int = 85,
 ) -> str:
     """
     Build a custom-status bubble matching Discord.
@@ -89,68 +94,68 @@ def buildStatusPill(
     ----------
     text : Optional[str]
         The status text. May be None or empty.
-    emojiUnicode : Optional[str]
-        A Unicode emoji for the status, used when `emojiUrl` is absent.
-    emojiUrl : Optional[str]
+    emoji_unicode : Optional[str]
+        A Unicode emoji for the status, used when `emoji_url` is absent.
+    emoji_url : Optional[str]
         A URL for a custom emoji image, which takes precedence over
-        `emojiUnicode`.
+        `emoji_unicode`.
     theme : Theme
-        The theme mapping; uses "tagPill" for the background and "subtext"
+        The theme mapping; uses "tag_pill" for the background and "subtext"
         for the text color.
-    emojiSize : int, optional
+    emoji_size : int, optional
         The emoji width and height in pixels (default is 28).
-    maxHeight : int, optional
+    max_height : int, optional
         The maximum bubble height in pixels before overflow is clipped
         (default is 85).
 
     Returns
     -------
     str
-        The XHTML for the status bubble, or "" when `text`, `emojiUnicode`,
-        and `emojiUrl` are all falsy.
+        The XHTML for the status bubble, or "" when `text`, `emoji_unicode`,
+        and `emoji_url` are all falsy.
     """
 
-    if not (text or emojiUnicode or emojiUrl):
+    if not (text or emoji_unicode or emoji_url):
         return ""
 
-    if emojiUrl:
-        emojiEl = (
-            f'<img src="{emojiUrl}" width="{emojiSize}" height="{emojiSize}" '
+    if emoji_url:
+        emoji_el = (
+            f'<img src="{emoji_url}" width="{emoji_size}" height="{emoji_size}" '
             f'style="display:block;flex:none;border-radius:50%" />'
         )
-    elif emojiUnicode:
-        emojiEl = (
+    elif emoji_unicode:
+        emoji_el = (
             f'<span style="font-family:{FONT_STACK};flex:none;'
-            f'font-size:{emojiSize}px;line-height:26px">{escapeXml(emojiUnicode)}</span>'
+            f'font-size:{emoji_size}px;line-height:26px">{escape_xml(emoji_unicode)}</span>'
         )
     else:
-        emojiEl = ""
+        emoji_el = ""
 
-    textEl = (
+    text_el = (
         f'<span style="font:italic 400 20px {FONT_STACK};'
         f'color:{theme["subtext"]};min-width:0;'
         f'overflow-wrap:anywhere">'
-        f'{escapeXml(text)}</span>'
+        f'{escape_xml(text)}</span>'
         if text else ""
     )
 
     return (
         f'<div xmlns="http://www.w3.org/1999/xhtml" '
         f'style="display:inline-flex;align-items:flex-start;gap:12px;'
-        f'padding:16px 22px;border-radius:20px;background:{theme["tagPill"]};'
-        f'width:max-content;max-width:100%;max-height:{maxHeight}px;'
+        f'padding:16px 22px;border-radius:20px;background:{theme["tag_pill"]};'
+        f'width:max-content;max-width:100%;max-height:{max_height}px;'
         f'box-sizing:border-box;overflow:hidden">'
-        f'{emojiEl}{textEl}</div>'
+        f'{emoji_el}{text_el}</div>'
     )
 
 
-def buildServerTagPill(
+def build_server_tag_pill(
     x: int,
     cy: int,
-    tagText: str,
-    badgeUri: Optional[str],
-    textColor: str,
-    pillColor: str,
+    tag_text: str,
+    badge_uri: Optional[str],
+    text_color: str,
+    pill_color: str,
 ) -> tuple[str, int]:
     """
     Build a native-SVG server-tag pill in the form [badge] TAG.
@@ -161,14 +166,14 @@ def buildServerTagPill(
         The x-coordinate of the pill's left edge.
     cy : int
         The y-coordinate of the pill's vertical center.
-    tagText : str
+    tag_text : str
         The tag text shown after the optional badge.
-    badgeUri : Optional[str]
+    badge_uri : Optional[str]
         The URI for a leading badge image. When None, no badge is drawn and
         its width and gap collapse to zero.
-    textColor : str
+    text_color : str
         The color of the tag text.
-    pillColor : str
+    pill_color : str
         The fill color of the pill background.
 
     Returns
@@ -178,43 +183,43 @@ def buildServerTagPill(
         position content after it.
     """
 
-    paddingX = 8
-    fontSize = 13
-    pillHeight = 22
-    badgeSize = 16 if badgeUri else 0
-    badgeGap = 4 if badgeUri else 0
+    padding_x = 8
+    font_size = 13
+    pill_height = 22
+    badge_size = 16 if badge_uri else 0
+    badge_gap = 4 if badge_uri else 0
 
-    textWidth = estimateTextWidth(tagText, fontSize)
-    pillWidth = paddingX * 2 + badgeSize + badgeGap + textWidth
-    top = cy - pillHeight // 2
+    text_width = estimate_text_width(tag_text, font_size)
+    pill_width = padding_x * 2 + badge_size + badge_gap + text_width
+    top = cy - pill_height // 2
 
     parts = [
-        f'<rect x="{x}" y="{top}" width="{pillWidth}" '
-        f'height="{pillHeight}" rx="{pillHeight // 2}" fill="{pillColor}" />'
+        f'<rect x="{x}" y="{top}" width="{pill_width}" '
+        f'height="{pill_height}" rx="{pill_height // 2}" fill="{pill_color}" />'
     ]
 
-    contentX = x + paddingX
-    if badgeUri:
+    content_x = x + padding_x
+    if badge_uri:
         parts.append(
-            f'<image href="{badgeUri}" x="{contentX}" y="{cy - badgeSize // 2}" '
-            f'width="{badgeSize}" height="{badgeSize}" />'
+            f'<image href="{badge_uri}" x="{content_x}" y="{cy - badge_size // 2}" '
+            f'width="{badge_size}" height="{badge_size}" />'
         )
-        contentX += badgeSize + badgeGap
+        content_x += badge_size + badge_gap
 
     parts.append(
-        buildText(contentX, cy + fontSize // 2 - 2, tagText, textColor, fontSize, "600")
+        build_text(content_x, cy + font_size // 2 - 2, tag_text, text_color, font_size, "600")
     )
-    return "".join(parts), pillWidth
+    return "".join(parts), pill_width
 
 
-def buildHandlePillRow(
+def build_handle_pill_row(
     x: int,
     y: int,
     width: int,
     height: int,
     presence: Presence,
     theme: Theme,
-    badgeUri: Optional[str],
+    badge_uri: Optional[str],
 ) -> str:
     """
     Build the @handle row with an inline [badge] TAG pill and flag badges.
@@ -236,9 +241,9 @@ def buildHandlePillRow(
         The presence record; supplies the username, server-tag text, and
         flag badge URIs.
     theme : Theme
-        The theme mapping; uses "subtext" for the handle, and "tagPill" and
+        The theme mapping; uses "subtext" for the handle, and "tag_pill" and
         "text" for the pill.
-    badgeUri : Optional[str]
+    badge_uri : Optional[str]
         The URI for the tag pill's leading badge. When None, no badge is
         drawn inside the pill.
 
@@ -248,25 +253,25 @@ def buildHandlePillRow(
         The foreignObject markup for the row.
     """
 
-    handle = escapeXml(f"@{presence.username}") if presence.username else ""
+    handle = escape_xml(f"@{presence.username}") if presence.username else ""
     pill = ""
 
-    if presence.serverTagText:
-        badgeSize = 16
-        badgeImg = (
-            f'<img src="{badgeUri}" width="{badgeSize}" height="{badgeSize}" '
+    if presence.server_tag_text:
+        badge_size = 16
+        badge_img = (
+            f'<img src="{badge_uri}" width="{badge_size}" height="{badge_size}" '
             f'style="display:block;border-radius:3px" />'
-            if badgeUri else ""
+            if badge_uri else ""
         )
 
         pill = (
             f'<div style="display:inline-flex;align-items:center;gap:5px;'
-            f'padding:4px 14px 4px 11px;border-radius:13px;background:{theme["tagPill"]};'
+            f'padding:4px 14px 4px 11px;border-radius:13px;background:{theme["tag_pill"]};'
             f'font:600 16px {FONT_STACK};color:{theme["text"]}">'
-            f'{badgeImg}<span>{escapeXml(presence.serverTagText)}</span></div>'
+            f'{badge_img}<span>{escape_xml(presence.server_tag_text)}</span></div>'
         )
 
-    badges = _buildFlagBadges(presence.badgeUris)
+    badges = _build_flag_badges(presence.badge_uris)
 
     body = (
         f'<div xmlns="http://www.w3.org/1999/xhtml" '

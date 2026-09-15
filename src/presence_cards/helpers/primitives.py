@@ -41,7 +41,7 @@ FALLBACK_PNG_URI = (
 FONT_STACK = "'gg sans', Segoe UI, Helvetica, Arial, sans-serif"
 
 @lru_cache(maxsize=1)
-def fontFaceDefs() -> str:
+def font_face_defs() -> str:
     """
     Build @font-face defs embedding gg sans as base64, cached after first call.
 
@@ -58,8 +58,8 @@ def fontFaceDefs() -> str:
 
     faces = []
 
-    for fileName, weight in (("ggsans.woff2", 400), ("ggsansbold.woff2", 700)):
-        encoded = base64.b64encode((FONT_DIR / fileName).read_bytes()).decode("ascii")
+    for file_name, weight in (("ggsans.woff2", 400), ("ggsansbold.woff2", 700)):
+        encoded = base64.b64encode((FONT_DIR / file_name).read_bytes()).decode("ascii")
         faces.append(
             f'@font-face{{font-family:"gg sans";'
             f'src:url(data:font/woff2;base64,{encoded}) format("woff2");'
@@ -70,7 +70,7 @@ def fontFaceDefs() -> str:
     return f'<defs><style>{"".join(faces)}</style></defs>'
 
 
-def estimateTextWidth(text: str, fontSize: int) -> int:
+def estimate_text_width(text: str, font_size: int) -> int:
     """
     Approximate rendered text width without a font engine.
 
@@ -81,7 +81,7 @@ def estimateTextWidth(text: str, fontSize: int) -> int:
     ----------
     text : str
         The text to measure.
-    fontSize : int
+    font_size : int
         The font size in pixels, treated as 1em.
 
     Returns
@@ -93,13 +93,13 @@ def estimateTextWidth(text: str, fontSize: int) -> int:
     total = 0.0
 
     for ch in text:
-        eastAsianWidth = unicodedata.east_asian_width(ch)
-        total += fontSize * (1.0 if eastAsianWidth in ("W", "F") else 0.6)
+        east_asian_width = unicodedata.east_asian_width(ch)
+        total += font_size * (1.0 if east_asian_width in ("W", "F") else 0.6)
 
     return int(total)
 
 
-def escapeXml(value: str) -> str:
+def escape_xml(value: str) -> str:
     """
     Escape a string for safe insertion into SVG text nodes.
 
@@ -117,7 +117,7 @@ def escapeXml(value: str) -> str:
     return escape(value or "")
 
 
-async def fetchDataUri(url: str, httpClient: httpx.AsyncClient) -> str:
+async def fetch_data_uri(url: str, http_client: httpx.AsyncClient) -> str:
     """
     Fetch an image and return it as a base64 data URI.
 
@@ -128,7 +128,7 @@ async def fetchDataUri(url: str, httpClient: httpx.AsyncClient) -> str:
     ----------
     url : str
         The image URL to fetch.
-    httpClient : httpx.AsyncClient
+    http_client : httpx.AsyncClient
         The async client used to perform the request.
 
     Returns
@@ -139,19 +139,19 @@ async def fetchDataUri(url: str, httpClient: httpx.AsyncClient) -> str:
     """
 
     try:
-        response = await httpClient.get(url, timeout=5.0)
+        response = await http_client.get(url, timeout=5.0)
         response.raise_for_status()
 
     except httpx.HTTPError:
         return FALLBACK_PNG_URI
 
-    mimeType = response.headers.get("content-type", "image/png")
+    mime_type = response.headers.get("content-type", "image/png")
     encoded = base64.b64encode(response.content).decode("ascii")
 
-    return f"data:{mimeType};base64,{encoded}"
+    return f"data:{mime_type};base64,{encoded}"
 
 
-def buildText(
+def build_text(
     x: int,
     y: int,
     content: str,
@@ -188,11 +188,11 @@ def buildText(
     return (
         f'<text x="{x}" y="{y}" fill="{fill}" '
         f'font-family="{FONT_STACK}" font-size="{size}" '
-        f'font-weight="{weight}">{escapeXml(content)}</text>'
+        f'font-weight="{weight}">{escape_xml(content)}</text>'
     )
 
 
-def buildCardBackground(theme: Theme, defsId: str = "cardBg") -> tuple[str, str]:
+def build_card_background(theme: Theme, defs_id: str = "cardBg") -> tuple[str, str]:
     """
     Build the defs and fill for a card background.
 
@@ -202,9 +202,9 @@ def buildCardBackground(theme: Theme, defsId: str = "cardBg") -> tuple[str, str]
     Parameters
     ----------
     theme : Theme
-        The theme mapping; uses "bgGradient" (a (top, bottom) pair) when
+        The theme mapping; uses "bg_gradient" (a (top, bottom) pair) when
         present, otherwise "background".
-    defsId : str, optional
+    defs_id : str, optional
         The id for the generated gradient (default is "cardBg").
 
     Returns
@@ -214,23 +214,23 @@ def buildCardBackground(theme: Theme, defsId: str = "cardBg") -> tuple[str, str]
         ("", "#hex"); for a gradient theme, ("<defs>...</defs>", "url(#id)").
     """
 
-    gradient = theme.get("bgGradient")
+    gradient = theme.get("bg_gradient")
 
     if not gradient:
         return "", theme["background"]
 
     top, bottom = gradient
     defs = (
-        f'<defs><linearGradient id="{defsId}" x1="0" y1="0" x2="1" y2="1">'
+        f'<defs><linearGradient id="{defs_id}" x1="0" y1="0" x2="1" y2="1">'
         f'<stop offset="0%" stop-color="{top}"/>'
         f'<stop offset="100%" stop-color="{bottom}"/>'
         f'</linearGradient></defs>'
     )
 
-    return defs, f"url(#{defsId})"
+    return defs, f"url(#{defs_id})"
 
 
-def buildSvgRoot(*, width: int, height: int, viewBox: str, body: str) -> str:
+def build_svg_root(*, width: int, height: int, view_box: str, body: str) -> str:
     """
     Wrap body markup in the root <svg> element, embedding fonts once.
 
@@ -244,7 +244,7 @@ def buildSvgRoot(*, width: int, height: int, viewBox: str, body: str) -> str:
         The SVG width in pixels.
     height : int
         The SVG height in pixels.
-    viewBox : str
+    view_box : str
         The SVG viewBox attribute value.
     body : str
         The inner markup to wrap.
@@ -257,7 +257,7 @@ def buildSvgRoot(*, width: int, height: int, viewBox: str, body: str) -> str:
 
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" '
-        f'width="{width}" height="{height}" viewBox="{viewBox}">'
-        f'{fontFaceDefs()}{body}'
+        f'width="{width}" height="{height}" viewBox="{view_box}">'
+        f'{font_face_defs()}{body}'
         f'</svg>'
     )

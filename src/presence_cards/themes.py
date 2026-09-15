@@ -44,19 +44,19 @@ class Theme(TypedDict):
         The primary text color of the card.
     subtext : str
         The secondary text color of the card.
-    tagPill : str
+    tag_pill : str
         The color of the tag pill on the card.
     accent : str
         The accent color used for highlights and important elements on the card.
-    bgGradient : tuple of str, optional
+    bg_gradient : tuple of str, optional
         A tuple representing the top and bottom colors of a gradient background.
     """
     background: str
     text: str
     subtext: str
-    tagPill: str
+    tag_pill: str
     accent: str
-    bgGradient: NotRequired[tuple[str, str]]
+    bg_gradient: NotRequired[tuple[str, str]]
 
 
 # Canonical text colors for dark vs. light surfaces. Shared by the named themes
@@ -76,14 +76,14 @@ THEMES: dict[str, Theme] = {
         "background": "#2f3136",
         "text":       TEXT_ON_DARK,
         "subtext":    "#b9bbbe",
-        "tagPill":    "#4f545c",
+        "tag_pill":   "#4f545c",
         "accent":     ACCENT_GREEN,
     },
     "light": {
         "background": "#ffffff",
         "text":       TEXT_ON_LIGHT,
         "subtext":    "#4f5660",
-        "tagPill":    "#e3e5e8",
+        "tag_pill":   "#e3e5e8",
         "accent":     "#248046",   # deliberately darker than ACCENT_GREEN for contrast on white; left literal
     },
 }
@@ -91,5 +91,5 @@ THEMES: dict[str, Theme] = {
 DEFAULT_THEME = "dark"
 
 
-def resolveTheme(name: str) -> Theme:
+def resolve_theme(name: str) -> Theme:
     return THEMES.get(name, THEMES[DEFAULT_THEME])

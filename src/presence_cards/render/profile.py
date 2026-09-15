@@ -37,16 +37,16 @@ import secrets
 import httpx
 from ..store import Presence
 from ..themes import Theme
-from ..helpers.activity import buildActivityRow, buildActivityCard
-from ..helpers.avatar import buildAvatarCircle
-from ..helpers.pill import buildHandlePillRow, buildStatusPill
+from ..helpers.activity import build_activity_row, build_activity_card
+from ..helpers.avatar import build_avatar_circle
+from ..helpers.pill import build_handle_pill_row, build_status_pill
 from ..helpers.primitives import (
-    buildText,
-    fetchDataUri,
-    buildCardBackground,
-    buildSvgRoot
+    build_text,
+    fetch_data_uri,
+    build_card_background,
+    build_svg_root
 )
-from ..helpers.color import derivePanel
+from ..helpers.color import derive_panel
 
 # Canvas
 VIEWBOX_WIDTH = 700
@@ -57,42 +57,42 @@ CARD_BOTTOM_PAD   = 26    # last element bottom -> card bottom edge
 
 LAYOUT = {
     "corner":      24,
-    "bannerH":     192,
-    "avatarCx":    100,
-    "avatarCy":    174,
-    "avatarR":     84,
-    "decoScale":   1.18,
-    "ringWidth":   6,
+    "banner_h":     192,
+    "avatar_cx":    100,
+    "avatar_cy":    174,
+    "avatar_r":     84,
+    "deco_scale":   1.18,
+    "ring_width":   6,
     "pad":         28,
 
-    "nameY":       308,
-    "nameSize":    40,
+    "name_y":       308,
+    "name_size":    40,
 
-    "foBoxY":      322,
-    "foBoxH":      40,
+    "fo_box_y":      322,
+    "fo_box_h":      40,
 
-    "activityArt": 120,    # SINGLE source of truth — matches buildActivityRow default
-    "activityPad": 14,
+    "activity_art": 120,    # SINGLE source of truth — matches buildActivityRow default
+    "activity_pad": 14,
 
     # custom status pill (floats beside avatar, independent of derive chain)
-    "statusX":                225,   # ≈ avatar right edge, slight overlap like the screenshot
-    "statusY":                190,   # ≈ avatarCy - pill/2, sits at avatar's upper-middle
-    "statusW":                450,   # hard truncation boundary for long statuses
-    "statusH":                85,    # fits 2 wrapped lines: 2×~26 line-height + 2×14 pad ≈ 80, CJK + 5 = 85
+    "status_x":                225,   # ≈ avatar right edge, slight overlap like the screenshot
+    "status_y":                190,   # ≈ avatar_cy - pill/2, sits at avatar's upper-middle
+    "status_w":                450,   # hard truncation boundary for long statuses
+    "status_h":                85,    # fits 2 wrapped lines: 2×~26 line-height + 2×14 pad ≈ 80, CJK + 5 = 85
 
     # left/top overflow room; right/bottom need none 
-    # statusW/H are hard truncation bounds so content never reaches them.
+    # status_w/H are hard truncation bounds so content never reaches them.
     # NOTE: this also nudges the bubble up-left by 16px (foreignObject origin relocates content), 
     # which is intentional overlap, not a bug.
-    "statusForeignObjectBleed": 16,
+    "status_foreign_object_bleed": 16,
 
-    # status-bubble tail dots (offsets are relative to statusX / statusY)
-    "tailBigRadius":   24,   # large dot: hugs the bubble's top edge
-    "tailBigOffsetX":  24,
-    "tailBigOffsetY": -15,
-    "tailSmallRadius":   8,  # small dot: trails up toward the avatar
-    "tailSmallOffsetX": -8,
-    "tailSmallOffsetY": -40,
+    # status-bubble tail dots (offsets are relative to status_x / status_y)
+    "tail_big_radius":   24,   # large dot: hugs the bubble's top edge
+    "tail_big_offset_x":  24,
+    "tail_big_offset_y": -15,
+    "tail_small_radius":   8,  # small dot: trails up toward the avatar
+    "tail_small_offset_x": -8,
+    "tail_small_offset_y": -40,
 }
 
 
@@ -106,8 +106,8 @@ def _derive(layout: dict) -> dict:
     Parameters
     ----------
     layout : dict
-        The base layout mapping; extended in place with "pillBottom",
-        "activityY", "activityH", and "activityBot".
+        The base layout mapping; extended in place with "pill_bottom",
+        "activity_y", "activity_h", and "activity_bot".
 
     Returns
     -------
@@ -115,23 +115,23 @@ def _derive(layout: dict) -> dict:
         The same `layout` mapping, for convenience.
     """
 
-    layout["pillBottom"]  = layout["foBoxY"] + layout["foBoxH"]
-    layout["activityY"]   = layout["pillBottom"] + GAP_PILL_ACTIVITY
-    layout["activityH"]   = layout["activityArt"] + layout["activityPad"] * 2
-    layout["activityBot"] = layout["activityY"] + layout["activityH"]
+    layout["pill_bottom"]  = layout["fo_box_y"] + layout["fo_box_h"]
+    layout["activity_y"]   = layout["pill_bottom"] + GAP_PILL_ACTIVITY
+    layout["activity_h"]   = layout["activity_art"] + layout["activity_pad"] * 2
+    layout["activity_bot"] = layout["activity_y"] + layout["activity_h"]
 
     return layout
 
 _derive(LAYOUT)
 
-VIEWBOX_HEIGHT_BASE     = LAYOUT["pillBottom"]  + CARD_BOTTOM_PAD   # = 386
-VIEWBOX_HEIGHT_ACTIVITY = LAYOUT["activityBot"] + CARD_BOTTOM_PAD   # = 494
+VIEWBOX_HEIGHT_BASE     = LAYOUT["pill_bottom"]  + CARD_BOTTOM_PAD   # = 386
+VIEWBOX_HEIGHT_ACTIVITY = LAYOUT["activity_bot"] + CARD_BOTTOM_PAD   # = 494
 
 
-async def renderProfile(
+async def render_profile(
     presence: Presence,
     theme: Theme,
-    httpClient: httpx.AsyncClient,
+    http_client: httpx.AsyncClient,
     width: int = 500,
 ) -> str:
     """
@@ -158,7 +158,7 @@ async def renderProfile(
         The presence record to render.
     theme : Theme
         The resolved theme supplying colors and any background gradient.
-    httpClient : httpx.AsyncClient
+    http_client : httpx.AsyncClient
         The async client used to inline the avatar, banner, decoration,
         badge, and activity images.
     width : int, optional
@@ -176,146 +176,160 @@ async def renderProfile(
     # digit — XML ids must begin with a letter/underscore.
     uid = secrets.token_hex(4)
 
-    avatarUri = await fetchDataUri(presence.avatarUrl, httpClient)
+    avatar_uri = await fetch_data_uri(presence.avatar_url, http_client)
 
-    bannerUri = (
-        await fetchDataUri(presence.bannerUrl, httpClient)
-        if presence.bannerUrl else None
+    banner_uri = (
+        await fetch_data_uri(presence.banner_url, http_client)
+        if presence.banner_url else None
     )
 
-    decoUri = (
-        await fetchDataUri(presence.avatarDecorationUrl, httpClient)
-        if presence.avatarDecorationUrl else None
+    deco_uri = (
+        await fetch_data_uri(presence.avatar_decoration_url, http_client)
+        if presence.avatar_decoration_url else None
     )
 
-    badgeUri = (
-        await fetchDataUri(presence.serverTagBadgeUrl, httpClient)
-        if presence.serverTagBadgeUrl else None
+    badge_uri = (
+        await fetch_data_uri(presence.server_tag_badge_url, http_client)
+        if presence.server_tag_badge_url else None
     )
 
     # card background fill (flat color OR gradient)
-    cardDefs, cardFill = buildCardBackground(theme, defsId=f"cardBg-{uid}")
+    card_defs, card_fill = build_card_background(theme, defs_id=f"cardBg-{uid}")
 
-    if bannerUri:
+    if banner_uri:
         banner = (
             f'<defs><clipPath id="bannerClip-{uid}">'
-            f'<rect x="0" y="0" width="{VIEWBOX_WIDTH}" height="{layout["bannerH"]}" '
+            f'<rect x="0" y="0" width="{VIEWBOX_WIDTH}" height="{layout["banner_h"]}" '
             f'rx="{layout["corner"]}" /></clipPath></defs>'
-            f'<image href="{bannerUri}" x="0" y="0" width="{VIEWBOX_WIDTH}" '
-            f'height="{layout["bannerH"]}" preserveAspectRatio="xMidYMid slice" '
+            f'<image href="{banner_uri}" x="0" y="0" width="{VIEWBOX_WIDTH}" '
+            f'height="{layout["banner_h"]}" preserveAspectRatio="xMidYMid slice" '
             f'clip-path="url(#bannerClip-{uid})" />'
         )
 
     else:
-        fill = cardFill if theme.get("bgGradient") else theme["tagPill"]
+        fill = card_fill if theme.get("bg_gradient") else theme["tag_pill"]
         banner = (
-            f'<rect x="0" y="0" width="{VIEWBOX_WIDTH}" height="{layout["bannerH"]}" '
+            f'<rect x="0" y="0" width="{VIEWBOX_WIDTH}" height="{layout["banner_h"]}" '
             f'rx="{layout["corner"]}" fill="{fill}" />'
         )
 
-    avatar = buildAvatarCircle(
-        avatarUri=avatarUri,
-        cx=layout["avatarCx"], cy=layout["avatarCy"], radius=layout["avatarR"],
+    avatar = build_avatar_circle(
+        avatar_uri=avatar_uri,
+        cx=layout["avatar_cx"],
+        cy=layout["avatar_cy"],
+        radius=layout["avatar_r"],
         status=presence.status,
-        backgroundColor=theme["background"],
-        decoUri=decoUri, decoScale=layout["decoScale"],
-        ringWidth=layout["ringWidth"],
-        clipId=f"avatarClip-{uid}",
+        bg_color=theme["background"],
+        decoration_uri=deco_uri,
+        decoration_scale=layout["deco_scale"],
+        ring_width=layout["ring_width"],
+        clip_id=f"avatarClip-{uid}",
     )
 
-    name = buildText(
-        x=layout["pad"], y=layout["nameY"], content=presence.displayName,
-        fill=theme["text"], size=layout["nameSize"], weight="700",
+    name = build_text(
+        x=layout["pad"], y=layout["name_y"],
+        content=presence.display_name,
+        fill=theme["text"],
+        size=layout["name_size"],
+        weight="700",
     )
 
-    handleAndPill = buildHandlePillRow(
-        x=layout["pad"], y=layout["foBoxY"],
-        width=VIEWBOX_WIDTH - layout["pad"] * 2, height=layout["foBoxH"],
-        presence=presence, theme=theme, badgeUri=badgeUri,
+    handle_and_pill = build_handle_pill_row(
+        x=layout["pad"],
+        y=layout["fo_box_y"],
+        width=VIEWBOX_WIDTH - layout["pad"] * 2,
+        height=layout["fo_box_h"],
+        presence=presence,
+        theme=theme,
+        badge_uri=badge_uri,
     )
 
-    statusPill = buildStatusPill(
-        presence.customStatusText,
-        presence.customStatusEmojiUnicode,
-        presence.customStatusEmojiUrl,
+    status_pill = build_status_pill(
+        presence.custom_status_text,
+        presence.custom_status_emoji_unicode,
+        presence.custom_status_emoji_url,
         theme,
-        maxHeight=layout["statusH"],
+        max_height=layout["status_h"],
     )
 
-    foreignObjectBleed = layout["statusForeignObjectBleed"]
+    foreign_object_bleed = layout["status_foreign_object_bleed"]
 
-    statusForeignObject = (
-        f'<foreignObject x="{layout["statusX"] - foreignObjectBleed}" '
-        f'y="{layout["statusY"] - foreignObjectBleed}" '
-        f'width="{layout["statusW"] + foreignObjectBleed}" '
-        f'height="{layout["statusH"] + foreignObjectBleed}">{statusPill}</foreignObject>'
-        if statusPill else ""
+    status_foreign_object = (
+        f'<foreignObject x="{layout["status_x"] - foreign_object_bleed}" '
+        f'y="{layout["status_y"] - foreign_object_bleed}" '
+        f'width="{layout["status_w"] + foreign_object_bleed}" '
+        f'height="{layout["status_h"] + foreign_object_bleed}">{status_pill}</foreignObject>'
+        if status_pill else ""
     )
 
-    statusTail = ""
-    if statusPill:
-        buildDot = lambda centerX, centerY, radius: (
-            f'<circle cx="{centerX}" cy="{centerY}" r="{radius}" fill="{theme["tagPill"]}" />'
+    status_tail = ""
+    if status_pill:
+        build_dot = lambda center_x, center_y, radius: (
+            f'<circle cx="{center_x}" cy="{center_y}" r="{radius}" fill="{theme["tag_pill"]}" />'
         )
-        bubbleX, bubbleY = layout["statusX"], layout["statusY"]
+        bubble_x, bubble_y = layout["status_x"], layout["status_y"]
         # big dot hugs bubble top edge; small dot trails up toward avatar
-        statusTail = (
-            buildDot(
-                bubbleX + layout["tailBigOffsetX"],
-                bubbleY + layout["tailBigOffsetY"],
-                layout["tailBigRadius"],
+        status_tail = (
+            build_dot(
+                bubble_x + layout["tail_big_offset_x"],
+                bubble_y + layout["tail_big_offset_y"],
+                layout["tail_big_radius"],
             )
-            + buildDot(
-                bubbleX + layout["tailSmallOffsetX"],
-                bubbleY + layout["tailSmallOffsetY"],
-                layout["tailSmallRadius"],
+            + build_dot(
+                bubble_x + layout["tail_small_offset_x"],
+                bubble_y + layout["tail_small_offset_y"],
+                layout["tail_small_radius"],
             )
         )
 
-    activityBlock = ""
-    viewBoxHeight = VIEWBOX_HEIGHT_BASE
-    if presence.activityName:
-        largeUri = (
-            await fetchDataUri(presence.activityLargeImageUrl, httpClient)
-            if presence.activityLargeImageUrl else None
+    activity_block = ""
+    view_box_height = VIEWBOX_HEIGHT_BASE
+    if presence.activity_name:
+        large_uri = (
+            await fetch_data_uri(presence.activity_large_image_url, http_client)
+            if presence.activity_large_image_url else None
         )
-        smallUri = (
-            await fetchDataUri(presence.activitySmallImageUrl, httpClient)
-            if presence.activitySmallImageUrl else None
-        )
-
-        panelColor = derivePanel(theme["background"])
-
-        panel, innerX, innerY, _ = buildActivityCard(
-            x=layout["pad"], y=layout["activityY"],
-            width=VIEWBOX_WIDTH - layout["pad"] * 2, height=layout["activityH"],
-            fill=panelColor, padding=layout["activityPad"],
+        small_uri = (
+            await fetch_data_uri(presence.activity_small_image_url, http_client)
+            if presence.activity_small_image_url else None
         )
 
-        row = buildActivityRow(
-            innerX, innerY, presence.activityName,
-            art=layout["activityArt"],
-            textColor=theme["text"],
-            subTextColor=theme["subtext"],
-            accentColor=theme["accent"],
-            ringColor=panelColor,
-            details=presence.activityDetails,
-            start=presence.activityStart,
-            largeUri=largeUri, smallUri=smallUri,
-            clipId=f"activityArtClip-{uid}",
+        panel_color = derive_panel(theme["background"])
+
+        panel, inner_x, inner_y, _ = build_activity_card(
+            x=layout["pad"],
+            y=layout["activity_y"],
+            width=VIEWBOX_WIDTH - layout["pad"] * 2,
+            height=layout["activity_h"],
+            fill=panel_color,
+            padding=layout["activity_pad"],
         )
-        activityBlock = panel + row
-        viewBoxHeight = VIEWBOX_HEIGHT_ACTIVITY
 
-    height = int(width * viewBoxHeight / VIEWBOX_WIDTH)
+        row = build_activity_row(
+            inner_x, inner_y, presence.activity_name,
+            art=layout["activity_art"],
+            text_color=theme["text"],
+            sub_text_color=theme["subtext"],
+            accent_color=theme["accent"],
+            ring_color=panel_color,
+            details=presence.activity_details,
+            start=presence.activity_start,
+            large_uri=large_uri,
+            small_uri=small_uri,
+            clip_id=f"activityArtClip-{uid}",
+        )
+        activity_block = panel + row
+        view_box_height = VIEWBOX_HEIGHT_ACTIVITY
 
-    return buildSvgRoot(
+    height = int(width * view_box_height / VIEWBOX_WIDTH)
+
+    return build_svg_root(
         width=width,
         height=height,
-        viewBox=f"0 0 {VIEWBOX_WIDTH} {viewBoxHeight}",
+        view_box=f"0 0 {VIEWBOX_WIDTH} {view_box_height}",
         body=(
-            f'{cardDefs}'
-            f'<rect width="{VIEWBOX_WIDTH}" height="{viewBoxHeight}" rx="{layout["corner"]}" fill="{cardFill}" />'
-            f'{banner}{avatar}{name}{handleAndPill}{activityBlock}{statusTail}{statusForeignObject}'
+            f'{card_defs}'
+            f'<rect width="{VIEWBOX_WIDTH}" height="{view_box_height}" rx="{layout["corner"]}" fill="{card_fill}" />'
+            f'{banner}{avatar}{name}{handle_and_pill}{activity_block}{status_tail}{status_foreign_object}'
         ),
     )

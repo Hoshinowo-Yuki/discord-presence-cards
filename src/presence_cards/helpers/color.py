@@ -42,7 +42,7 @@ _NAMED_COLORS = {
 }
 
 
-def normalizeHex(raw: str) -> str:
+def normalize_hex(raw: str) -> str:
     """
     Normalize a color string to a canonical "#rrggbb" hex value.
 
@@ -80,14 +80,14 @@ def normalizeHex(raw: str) -> str:
     return f"#{value}"
 
 
-def gradientFromColor(raw: str) -> tuple[str, str]:
+def gradient_from_color(raw: str) -> tuple[str, str]:
     """
     Derive a two-stop gradient from a single input color.
 
     Parameters
     ----------
     raw : str
-        The input color, in any form accepted by `normalizeHex`.
+        The input color, in any form accepted by `normalize_hex`.
 
     Returns
     -------
@@ -98,24 +98,24 @@ def gradientFromColor(raw: str) -> tuple[str, str]:
     Raises
     ------
     ValueError
-        If `raw` is not a valid color (propagated from `normalizeHex`).
+        If `raw` is not a valid color (propagated from `normalize_hex`).
     """
 
-    base = normalizeHex(raw)                          # raises ValueError on junk
+    base = normalize_hex(raw)                          # raises ValueError on junk
 
     if luminance(base) < 0.5:
-        return base, shiftLightness(base, 0.28)       # dark base -> fade lighter
+        return base, shift_lightness(base, 0.28)       # dark base -> fade lighter
 
-    return shiftLightness(base, -0.28), base          # light base -> fade darker
+    return shift_lightness(base, -0.28), base          # light base -> fade darker
 
 
-def _hexToRgb(hexColor: str) -> tuple[int, int, int]:
+def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
     """
     Convert a hex color to an (r, g, b) tuple.
 
     Parameters
     ----------
-    hexColor : str
+    hex_color : str
         A hex color with an optional leading "#", in 3- or 6-digit form.
 
     Returns
@@ -124,15 +124,15 @@ def _hexToRgb(hexColor: str) -> tuple[int, int, int]:
         The red, green, and blue channels, each in the range 0-255.
     """
 
-    hexColor = hexColor.lstrip("#")
+    hex_color = hex_color.lstrip("#")
 
-    if len(hexColor) == 3:
-        hexColor = "".join(ch * 2 for ch in hexColor)
+    if len(hex_color) == 3:
+        hex_color = "".join(ch * 2 for ch in hex_color)
 
-    return int(hexColor[0:2], 16), int(hexColor[2:4], 16), int(hexColor[4:6], 16)
+    return int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
 
 
-def _rgbToHex(r: float, g: float, b: float) -> str:
+def _rgb_to_hex(r: float, g: float, b: float) -> str:
     """
     Convert r, g, b channels to a "#rrggbb" hex string.
 
@@ -155,14 +155,14 @@ def _rgbToHex(r: float, g: float, b: float) -> str:
     return f"#{clamp(r):02x}{clamp(g):02x}{clamp(b):02x}"
 
 
-def luminance(hexColor: str) -> float:
+def luminance(hex_color: str) -> float:
     """
     Compute the relative luminance of a color.
 
     Parameters
     ----------
-    hexColor : str
-        The color to measure, in any form accepted by `_hexToRgb`.
+    hex_color : str
+        The color to measure, in any form accepted by `_hex_to_rgb`.
 
     Returns
     -------
@@ -171,18 +171,18 @@ def luminance(hexColor: str) -> float:
         Rec. 709 channel weights.
     """
 
-    r, g, b = _hexToRgb(hexColor)
+    r, g, b = _hex_to_rgb(hex_color)
     return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
 
 
-def shiftLightness(hexColor: str, amount: float) -> str:
+def shift_lightness(hex_color: str, amount: float) -> str:
     """
     Nudge a color toward white or black.
 
     Parameters
     ----------
-    hexColor : str
-        The color to shift, in any form accepted by `_hexToRgb`.
+    hex_color : str
+        The color to shift, in any form accepted by `_hex_to_rgb`.
     amount : float
         The shift fraction. Positive values blend toward white; negative
         values scale toward black. Expected range is -1.0 to 1.0.
@@ -193,7 +193,7 @@ def shiftLightness(hexColor: str, amount: float) -> str:
         The shifted color as a "#rrggbb" string.
     """
 
-    r, g, b = _hexToRgb(hexColor)
+    r, g, b = _hex_to_rgb(hex_color)
 
     if amount >= 0:
         r += (255 - r) * amount
@@ -206,17 +206,17 @@ def shiftLightness(hexColor: str, amount: float) -> str:
         g *= factor
         b *= factor
 
-    return _rgbToHex(r, g, b)
+    return _rgb_to_hex(r, g, b)
 
 
-def derivePanel(background: str, amount: float = 0.06) -> str:
+def derive_panel(background: str, amount: float = 0.06) -> str:
     """
     Derive a raised-card color from a theme background.
 
     Parameters
     ----------
     background : str
-        The theme background color, in any form accepted by `_hexToRgb`.
+        The theme background color, in any form accepted by `_hex_to_rgb`.
     amount : float, optional
         The lightness shift magnitude (default is 0.06).
 
@@ -227,4 +227,4 @@ def derivePanel(background: str, amount: float = 0.06) -> str:
         ones, so the card always reads as raised above the background.
     """
 
-    return shiftLightness(background, amount if luminance(background) < 0.5 else -amount)
+    return shift_lightness(background, amount if luminance(background) < 0.5 else -amount)
