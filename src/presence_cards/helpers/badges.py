@@ -31,15 +31,12 @@ Badge SVGs live in `../assets/badges/` and are MIT-licensed (see NOTICE there).
 
 import base64
 from functools import lru_cache
-from pathlib import Path
-
+from presence_cards import BADGE_DIR
 from discord import UserFlags
 
-_BADGE_DIR = Path(__file__).parent.parent.parent / "assets" / "badges"
-
-if not _BADGE_DIR.is_dir():
+if not BADGE_DIR.is_dir():
     raise RuntimeError(
-        f"Badge dir not found: {_BADGE_DIR}. "
+        f"Badge dir not found: {BADGE_DIR}. "
         f"Check _BADGE_DIR depth relative to helpers/badges.py."
     )
 
@@ -80,7 +77,7 @@ def _loadBadgeUri(filename: str) -> str:
         A base64-encoded data URI of the badge SVG.
     """
 
-    raw = (_BADGE_DIR / filename).read_bytes()
+    raw = (BADGE_DIR / filename).read_bytes()
     b64 = base64.b64encode(raw).decode("ascii")
     return f"data:image/svg+xml;base64,{b64}"
 

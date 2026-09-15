@@ -1,26 +1,36 @@
-FROM python:3.11-slim
+# ---- build stage ----
+FROM python:3.11-slim AS builder
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    # compile bytecode at build time for faster container startup
-    UV_COMPILE_BYTECODE=1 \
-    # copy packages into the venv rather than symlinking to the cache
-    UV_LINK_MODE=copy
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=0
 
 WORKDIR /app
 
-# deps layer: only rebuilds when lock/pyproject change
 COPY pyproject.toml uv.lock README.md ./
-# no-install-project: install deps only, not your code yet (keeps this layer stable)
-RUN uv sync --frozen --no-dev --no-install-project
-
-# project layer: rebuilds on code edits, but deps above stay cached
 COPY src/ ./src/
-RUN uv sync --frozen --no-dev
+
+# --no-editable: build the wheel and COPY presence_cards into the venv's
+# site-packages, instead of writing a .pth pointer to /app/src
+RUN uv sync --frozen --no-dev --no-editable
+
+# ---- runtime stage ----
+FROM python:3.11-slim
+
+RUN useradd --create-home --uid 1000 app
+
+WORKDIR /app
+
+# copy ONLY the venv — the package now lives inside it, so we don't need src/
+COPY --from=builder --chown=app:app /app/.venv /app/.venv
+
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+USER app
 
 EXPOSE 8000
-
-# uv sync builds a .venv; run through `uv run` so it's used automatically. No --reload in prod.
-CMD ["uv", "run", "uvicorn", "presence_cards.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "presence_cards.main:app", "--host", "0.0.0.0", "--port", "8000"]

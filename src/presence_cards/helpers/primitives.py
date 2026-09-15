@@ -29,7 +29,7 @@ import unicodedata
 import httpx
 from xml.sax.saxutils import escape
 from functools import lru_cache
-from pathlib import Path
+from presence_cards import FONT_DIR
 from ..themes import Theme
 
 # A transparent 1x1 PNG, used when an image fetch fails so the card still renders.
@@ -39,9 +39,6 @@ FALLBACK_PNG_URI = (
 )
 
 FONT_STACK = "'gg sans', Segoe UI, Helvetica, Arial, sans-serif"
-
-_FONT_DIR = Path(__file__).parent.parent.parent / "assets" / "fonts"
-
 
 @lru_cache(maxsize=1)
 def fontFaceDefs() -> str:
@@ -62,7 +59,7 @@ def fontFaceDefs() -> str:
     faces = []
 
     for fileName, weight in (("ggsans.woff2", 400), ("ggsansbold.woff2", 700)):
-        encoded = base64.b64encode((_FONT_DIR / fileName).read_bytes()).decode("ascii")
+        encoded = base64.b64encode((FONT_DIR / fileName).read_bytes()).decode("ascii")
         faces.append(
             f'@font-face{{font-family:"gg sans";'
             f'src:url(data:font/woff2;base64,{encoded}) format("woff2");'
