@@ -1,8 +1,10 @@
 services:
   presence-cards:
     build: .
-    ports:
-      - "8000:8000"
     env_file:
-      - .env          # DISCORD_TOKEN lives here
+      - .env
+    environment:
+      - PORT=${PORT:-8000}
+    ports:
+      - "${PORT:-8000}:${PORT:-8000}"
     restart: unless-stopped

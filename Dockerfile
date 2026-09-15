@@ -31,6 +31,4 @@ ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
 
 USER app
-
-EXPOSE 8000
-CMD ["uvicorn", "presence_cards.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "presence_cards.main"]
