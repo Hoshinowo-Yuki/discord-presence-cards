@@ -38,7 +38,35 @@ FALLBACK_PNG_URI = (
     "AAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
 )
 
-FONT_STACK = "'gg sans', Segoe UI, Helvetica, Arial, sans-serif"
+# Explicit family matching runs before the system fallback list, so naming the
+# Windows CJK fonts here sidesteps the Chromium regression (issue 409486609)
+# that orders the unhinted Noto CJK subset ahead of JhengHei/YaHei. On non-Windows
+# viewers these names simply don't resolve and the browser falls through to its
+# own CJK fonts — a no-op, not a regression.
+#
+# Each Chinese font is listed by native name first, then English. The @font-face
+# `local()` spec matches only the US-English name, but plain font-family matching
+# is implementation-defined, and the localized name is the one that resolves
+# reliably under zh-TW / zh-CN system locales. Listing both costs nothing — an
+# unmatched name is simply skipped.
+#
+# Regional / script notes (deliberate, TC-first by design):
+#   - JhengHei precedes YaHei: Han unification shares many codepoints between
+#     Traditional and Simplified Chinese with different glyph forms, and the first
+#     matching family wins them. SVG has no per-name lang switching, so this is a
+#     global choice — SC display names render with TC glyph shapes.
+#   - Korean: JhengHei/YaHei lack Hangul, so Korean names fall through cleanly to
+#     the viewer's own KR font (Malgun Gothic / Noto Sans KR). Intentionally not named.
+#   - Japanese: JhengHei DOES cover kana + kanji, so JP names render in JhengHei
+#     with TC kanji shapes. Naming a JP font would fix this but flip the Han
+#     ordering against the TC-first majority — accepted limitation, not an oversight.
+
+FONT_STACK = (
+    "'gg sans', 'Segoe UI', "
+    "'微軟正黑體', 'Microsoft JhengHei', "
+    "'微软雅黑', 'Microsoft YaHei', "
+    "Helvetica, Arial, sans-serif"
+)
 
 @lru_cache(maxsize=1)
 def font_face_defs() -> str:
