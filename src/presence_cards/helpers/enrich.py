@@ -25,13 +25,13 @@ DEALINGS IN THE SOFTWARE.
 # SPDX-License-Identifier: MIT
 
 from typing import Optional
-import discord
+from discord import User, HTTPException
 from ..bot import bot
 from ..store import Presence
 
-_user_cache: dict[int, discord.User] = {}
+_user_cache: dict[int, User] = {}
 
-async def cached_fetch_user(user_id: int) -> Optional[discord.User]:
+async def cached_fetch_user(user_id: int) -> Optional[User]:
     """
     This function is a [coroutine](https://docs.python.org/3/library/asyncio-task.html#coroutine).
 
@@ -52,7 +52,7 @@ async def cached_fetch_user(user_id: int) -> Optional[discord.User]:
         try:
             _user_cache[user_id] = await bot.fetch_user(user_id)
 
-        except discord.HTTPException:
+        except HTTPException:
             return None
 
     return _user_cache[user_id]

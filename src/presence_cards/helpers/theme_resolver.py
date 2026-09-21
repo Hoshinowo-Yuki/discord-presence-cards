@@ -126,8 +126,12 @@ def theme_from_accent_bg(accent_color: Optional[int]) -> Theme:
     }
 
 
-def resolve_theme_param(*, theme: str, color: Optional[str],
-                      accent_color: Optional[int]) -> Theme:
+def resolve_theme_param(
+    *,
+    theme: str,
+    color: Optional[str],
+    accent_color: Optional[int]
+) -> Theme:
     """
     Resolve the public theme parameters to a concrete Theme.
 
