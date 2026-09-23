@@ -124,8 +124,9 @@ def _derive(layout: dict) -> dict:
 
 _derive(LAYOUT)
 
-VIEWBOX_HEIGHT_BASE     = LAYOUT["pill_bottom"]  + CARD_BOTTOM_PAD   # = 386
-VIEWBOX_HEIGHT_ACTIVITY = LAYOUT["activity_bot"] + CARD_BOTTOM_PAD   # = 494
+# These values are now derived, not hardcoded anymore
+VIEWBOX_HEIGHT_BASE     = LAYOUT["pill_bottom"]  + CARD_BOTTOM_PAD
+VIEWBOX_HEIGHT_ACTIVITY = LAYOUT["activity_bot"] + CARD_BOTTOM_PAD
 
 
 async def render_profile(
@@ -313,6 +314,7 @@ async def render_profile(
             accent_color=theme["accent"],
             ring_color=panel_color,
             details=presence.activity_details,
+            state=presence.activity_state,
             start=presence.activity_start,
             large_uri=large_uri,
             small_uri=small_uri,

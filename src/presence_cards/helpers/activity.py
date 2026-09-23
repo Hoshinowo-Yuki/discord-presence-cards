@@ -231,6 +231,7 @@ def build_activity_row(
     accent_color: str,
     ring_color: str,
     details: Optional[str] = None,
+    state: Optional[str] = None,
     start: Optional[datetime] = None,
     large_uri: Optional[str] = None,
     small_uri: Optional[str] = None,
@@ -266,6 +267,8 @@ def build_activity_row(
         The fill color for the ring drawn behind the small badge.
     details : Optional[str], optional
         The details line rendered under the name, if any. Defaults to None.
+    state : Optional[str], optional
+        The state line rendered under the details, if any. Defaults to None.
     start : Optional[datetime], optional
         The tz-aware activity start time. When provided, a gamepad icon and
         animated timer are rendered. Defaults to None.
@@ -331,19 +334,20 @@ def build_activity_row(
 
     line_y += 28
 
-    if details:
-        parts.append(
-            build_text(
-                x=text_x,
-                y=line_y,
-                content=details,
-                fill=sub_text_color,
-                size=20,
-                weight="400"
+    for line in (details, state):
+        if line:
+            parts.append(
+                build_text(
+                    x=text_x,
+                    y=line_y,
+                    content=line,
+                    fill=sub_text_color,
+                    size=20,
+                    weight="400"
+                )
             )
-        )
 
-        line_y += 28
+            line_y += 28
 
     if start is not None:
         parts.append(
